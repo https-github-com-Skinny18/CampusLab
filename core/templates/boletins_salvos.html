@@ -1,0 +1,183 @@
+
+{% load static %}
+{% include 'parciais/head.html'%}
+
+    <div id="grid">
+        <div id="conteudo_core">
+
+            {% include 'parciais/navbar.html'%}
+            <form id="form_pesquisa" class="p-3 w-100 d-flex justify-content-end form-inline caixa_de_pesquisa">
+				<div>
+					<input class="form-control mr-sm-2" id="filter" type="search" name="pesquisar" placeholder="Pesquisar">
+				</div>
+
+				<div>
+					<select class="form-control cor_texto_pesquisar " name="ano">
+						<option value="">Selecione um ano</option>
+						<option value="2022">2022</option>
+						<option value="2021">2021</option>
+						<option value="2020">2020</option>
+						<option value="2019">2019</option>
+						<option value="2000">2000</option>
+					</select>
+				</div>
+				<button class="btn btn-outline-success my-2 my-sm-0" type="submit">Pesquisar</button>
+			</form>
+
+            <div class="d-flex flex-wrap gap-3 justify-content-center">
+                {% for boletins in boletim %}
+                    <div class="card card-body-ato">
+                        <a href="{% url 'gerar_boletim' ato_ids=boletins.portarias_fks boletim_id=boletins.id %}" class="card card-link text-decoration-none card-body">
+                            <h5 class="card-title">BOLETIM - Nº{{ boletins.id|upper }}</h5>
+                            <p class="card-text">{{ boletins.conteudo_pdf|truncatechars:100}}</p>
+    
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+
+            
+        </div>
+    </div>
+
+
+<script>
+
+    const filterElement = document.querySelector('#filter')
+    const cards = document.querySelectorAll('.card.card-body')
+
+    var atoIDs = [];
+    var botao = document.getElementById("botao");
+    var botao2 = document.getElementById("botao2")
+    var contadorParagrafo = document.getElementById("contador-paragrafo");
+    var contadorElement = document.getElementById("contador");
+    
+    // Função para atualizar o link de download com os IDs dos atos selecionados
+    function updateDownloadLink() {
+        // Atualize o contadorElement com a contagem dos IDs dos atos selecionados
+        contadorElement.textContent = atoIDs.length;
+
+        // Mostrar/ocultar o contadorParagrafo e botao com base na contagem dos IDs dos atos selecionados
+        if (atoIDs.length > 0) {
+            contadorParagrafo.style.display = "block";
+            botao.style.display = "block";
+        } else {
+            contadorParagrafo.style.display = "none";
+            botao.style.display = "none";
+        }
+
+        // Construa a URL com os IDs dos atos selecionados
+        var url = "{% url 'salvar_boletim' ato_ids='-' %}".replace('-', atoIDs.join(','));
+        
+        // Atualize o atributo href do link de download
+        botao.href = url;
+        botao2.href = url2
+    }
+
+    // Obtenha todos os inputs de checkbox
+    var checkboxInputs = document.querySelectorAll('input[type="checkbox"]');
+
+    // Adicione os event listeners aos inputs de checkbox
+    checkboxInputs.forEach(function(input) {
+        input.addEventListener('click', function() {
+            var atoID = this.getAttribute('data-ato-id'); // Supondo que o valor do checkbox seja o ID do ato
+
+            // Verifique se o checkbox está marcado e adicione/remova o ID do ato do array
+            if (this.checked) {
+                atoIDs.push(atoID);
+            } else {
+                var index = atoIDs.indexOf(atoID);
+                if (index !== -1) {
+                    atoIDs.splice(index, 1);
+                }
+            }
+
+            updateDownloadLink();
+        });
+    });
+
+
+    
+    // const checkboxInputs = document.querySelectorAll('input[type="checkbox"]');
+    // let contador = 0
+    
+    // checkboxInputs.forEach(item => {
+    // 	if(item.checked){
+    // 		contador++
+    // 	}
+    // })
+    
+    // contadorElement.textContent = contador; // Atualiza o valor inicial do contador no elemento contadorEle
+
+    // for (let input of checkboxInputs) {
+    // 	input.addEventListener('click', () => {
+    // 		if (input.checked) {
+    // 			contador++;
+    // 		} else {
+    // 			contador--;
+    // 		}
+    // 		contadorElement.textContent = contador; // Atualiza o texto do elemento contadorElement
+        
+    // 		if (contador > 0) {
+    //         	contadorParagrafo.style.display = 'block'; 
+    // 			botaoLink.style.display = 'block';
+    // 		// Mostra o parágrafo do contador
+    // 		} else {
+    // 			contadorParagrafo.style.display = 'none';
+    // 			botaoLink.styles.dislay = 'none';
+    // 			// Oculta o parágrafo do contador
+    // 		}
+    // 	});
+    // }
+    // 	// Lista de IDs dos atos
+    // 	var idsAtos = [
+    // 		{% for ato in atos %}
+    // 			"{{ ato.id }}",
+    // 		{% endfor %}
+    // 	];
+
+    // 	// Remove as aspas extras da lista de IDs dos atos
+    // 	idsAtos = idsAtos.map(function(id) {
+    // 		return id.replace(/\"/g, '');
+    // 	});
+
+    // 	// Constrói a URL com base nos IDs dos atos
+
+    // 	// Obtém o elemento <a> pelo ID
+    // 	var botao = document.getElementById("botao");
+
+    // 	// Define a URL construída como o atributo href do elemento <a>
+    // 	botao.href = url;
+
+    // 	// Exibe o elemento <a> se houver IDs dos atos
+    // 	if (idsAtos.length > 0) {
+    // 		document.getElementById("contador-paragrafo").style.display = "block";
+    // 		botao.style.display = "block";
+    // 	}
+
+    // 	// Atualiza o contador com a quantidade de IDs dos atos
+    // 	document.getElementById("contador").textContent = idsAtos.length;
+
+    filterElement.addEventListener('input', filterCards)
+
+    function filterCards() {
+        if (filterElement.value != '') {
+            for (let card of cards) {
+                let title = card.querySelector('h5').textContent.toLowerCase();
+                let description = card.querySelector('p').textContent.toLowerCase();
+                let filterText = filterElement.value.toLowerCase();
+                if (!(title.includes(filterText) || description.includes(filterText))) { // modificação
+                    card.style.display = "none";
+                } else {
+                    card.style.display = "block";
+                }
+            }
+        } else {
+            for (let card of cards) {
+                card.style.display = "block";
+            }
+        }
+    }
+</script>
+
+{% include 'parciais/footer.html'%}

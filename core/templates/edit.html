@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <title>Editor</title>
+  {% include 'parciais/head.html'%}
+</head>
+
+<body>
+  <div id="grid">
+    <div id="conteudo_core">
+
+      {% include 'parciais/navbar.html'%}
+      {% if messages %}
+
+    </div>
+    <div class="alert-primary alert" style="display: block;">
+
+      {% for message in messages %}
+      {{ message }}
+      {% endfor %}
+
+    </div>
+  </div>
+
+  <script>
+    setTimeout(function () {
+      document.querySelector('.alert-primary').style.opacity = 0;
+      setTimeout(function () {
+        document.querySelector('.alert-primary').style.display = 'none';
+      }, 500);
+    }, 4000);
+  </script>
+  {% endif %}
+
+
+
+  {% include 'parciais/criar_ato.html'%}
+  </div>
+
+  {% include 'parciais/footer.html'%}
+  </div>
+
+</body>
+
+</html>

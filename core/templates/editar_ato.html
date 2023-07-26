@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <title>Editor</title>
+  {% include 'parciais/head.html'%}
+</head>
+
+{% include 'parciais/navbar.html'%}
+
+
+<form method="post" class="m-3">
+      <div class="container ">
+      
+        <div class="row">
+      {% csrf_token %}
+      <div class="form-group col-md-12">
+        <label for="texto_normativo titulo">Texto Normativo</label>
+        <textarea class="form-control" rows="9" id="texto_normativo" name="texto_normativo">{{ ato.texto_normativo }}</textarea>
+      </div>
+      <div class="form-group col-md-12">
+        <label for="ementa">Ementa</label>
+        <textarea   class="form-control"  rows="7" id="ementa" name="ementa" >{{ ato.ementa }}</textarea>
+      </div>
+      <div class="form-group col-md-3">
+        <label for="ano">Ano</label>
+        <input type="text" class="form-control" id="ano" name="ano" value="{{ ato.ano }}">
+      </div>
+      <div class="form-group col-md-3">
+        <label for="numero">Número</label>
+        <input type="text" class="form-control" id="numero" name="numero" value="{{ ato.numero }}">
+      </div>
+      <div class="form-group col-md-3">
+        <label for="doe_pagina">DOE Página</label>
+
+        <input type="text" class="form-control" id="doe_pagina" name="doe_pagina" value="{{ ato.doe_pagina }}">
+
+      </div>
+      <div class="form-group col-md-3">
+        <label for="doe_secao">DOE Seção</label>
+        <input type="text" class="form-control" id="doe_secao" name="doe_secao" value="{{ ato.doe_secao }}">
+      </div>
+      <div class="form-group col-md-3">
+        <label for="doe_numero">DOE Número</label>
+        <input type="text" class="form-control" id="doe_numero" name="doe_numero" value="{{ ato.doe_numero }}">
+      </div>
+      <div class="form-group col-md-3">
+        <label for="cargoDaAutoridadePrimaria">Autoridade 1</label>
+        <select class="form-control" id="cargoDaAutoridadePrimaria" name="cargoDaAutoridadePrimaria">
+          {% for autoridade in autoridades %}
+          <option value="{{ autoridade.id }}" {% if autoridade.id == ato.autoridade1.id %}selected{% endif %}>{{ autoridade.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-3">
+        <label for="tipoAto">tipo_ato</label>
+        <select class="form-control" id="tipoAto" name="tipo_ato">
+            <option value="portaria" {% if ato.tipo_ato == "portaria" %} selected {% endif %}>Portaria</option>
+            <option value="Resolução" {% if ato.tipo_ato == "Resolução" %} selected {% endif %}>Resolução</option>
+        </select>
+      </div>
+      
+      <div class="form-group col-md-3">
+        <label for="cargoDaAutoridadeSecundaria">Autoridade 2</label>
+        <select class="form-control" id="cargoDaAutoridadeSecundaria" name="cargoDaAutoridadeSecundaria">
+          <option value="" {% if not ato.autoridade2 %}selected{% endif %}>Nenhuma</option>
+          {% for autoridade in autoridades %}
+          <option value="{{ autoridade.id }}" {% if autoridade.id == ato.autoridade2.id %}selected{% endif %}>{{ autoridade.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-3">
+        <label for="assinante1">Assinante 1</label>
+        <select class="form-control" id="assinante1" name="assinante1">
+          {% for autoridade in autoridades %}
+          <option value="{{ autoridade.id }}" {% if autoridade.id == ato.assinante1.id %}selected{% endif %}>{{ autoridade.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-3">
+        <label for="assinante2">Assinante 2</label>
+        <select class="form-control" id="assinante2" name="assinante2">
+          <option value="" {% if not ato.assinante2 %}selected{% endif %}>Nenhuma</option>
+          {% for autoridade in autoridades %}
+          <option value="{{ autoridade.id }}" {% if autoridade.id == ato.assinante2.id %}selected{% endif %}>{{ autoridade.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-3">
+        <label for="status">Status</label>
+        <select class="form-control" id="status" name="status">
+          {% for choice in ato.STATUS_CHOICES %}
+            {% if choice.0 == ato.status %}
+              <option value="{{ ato.tipo_ato }}" selected>{{ ato.tipo_ato }}</option>
+            {% else %}
+              <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary m-2">Atualizar</button>
+      <!-- <input type="submit" name="aprovar_ato" value="Aprovar Ato"> -->
+    </div>
+  </div>
+</form>
+
+{% include 'parciais/footer.html'%}

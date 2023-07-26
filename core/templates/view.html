@@ -1,0 +1,40 @@
+{% load static %}
+
+{% include 'parciais/head.html' %}
+
+<body>
+    {% include 'parciais/navbar.html'%}
+    <div class="container">
+        <div class="card mt-4">
+
+            <div class="card-header bg-default">
+                <div class="d-flex justify-content-between ">
+                    <h3 class="card-title">{{ ato.tipo_ato|upper }} / NUMERO {{ ato.numero }}</h3>
+                    
+                    <div class="d-flex gap-3  ">
+                        <a href="{% url 'editar_ato' ato_ids=ato.id %}" target="_blank" class="bg-light p-2 text-reset rounded ">
+                            <i class="bi bi-pencil-square fa-2x"></i>
+                        </a>
+
+                        <a href="{% url 'gerar_pdf' ato_ids=ato.id %}" target="_blank" class="bg-light p-2 text-reset  rounded  ">
+                            <i class="bi bi-download fa-2x"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="tab-content bg-red-500">
+                    <p class="card-title ">Assinatura: {{ ato.assinante1 }}</p>
+                    <p class="card-title">Autoridade: {{ ato.autoridade1 }}</p>
+                    <p class="card-title">Data de publicação: {{ ato.dt_publicado }}</p>
+                    <p class="card-title">Ementa:{{ ato.ementa }}</p>
+                    <p class="text-justify"> Texto Normativo:{{ ato.texto_normativo }}</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% include 'parciais/footer.html'%}
+
+</body>

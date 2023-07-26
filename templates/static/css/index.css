@@ -1,0 +1,146 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    --corBackground: #ffffff;
+    --corPrimaria: #006221;
+    --corSegundaria: #00622198;
+    background-color: var(--corBackground);
+    width: 100vw;
+    height: 100vh;
+}
+
+#grid {
+    margin-bottom: 401px;
+    display: grid;
+    height: 100vh;
+    grid-template-columns: 1;
+    grid-template-rows: 15fr 1fr;
+}
+
+.titulo {
+    background-color: var(--corPrimaria);
+    text-transform: uppercase;
+    border-radius: 8px 8px 0 0;
+    padding: 4px;
+    color: #ffffff;
+}
+
+.card-body-ato {
+    max-width: 200px;
+}
+
+.card-atos {
+    /* flex: 0 0 calc(14% - 10px); */
+}
+
+.card-link {
+    cursor: pointer;
+    background-color: #e3e0e0;
+    color: #000000;
+    min-height: 200px;
+    transition: .3s;
+}
+
+.card-link:hover {
+    
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.463);
+}
+
+#placeholder {
+    display: flex;
+    justify-content: center;
+}
+
+.col-6 {
+    border: 2px solid #161f29;
+    border-radius: 100px;
+    width: 60rem;
+    height: 40rem;
+    margin-left: 0%;
+}
+
+.alert-primary {
+    padding: 10px;
+    text-align: center;
+    font-size: 1.2em;
+    background-color: #034b8280;
+    color: white;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.bg-success {
+    background-color: #006221 !important;
+}
+
+.bg-default {
+    background-color: #b3b5c2ce !important;
+}
+
+.bg-success-light {
+    background-color: #00622198 !important;
+}
+
+
+.footer-uea {
+    height: 2.2rem;
+
+}
+
+/* .teste{
+    height: 40rem !important;
+    background-color: #29161a !important;
+} */
+
+.page-item.active .page-link {
+    color: #fafafa;
+    background-color: var(--corPrimaria);
+    border-color: var(--corPrimaria);
+}
+
+.page-link {
+    color: #000000;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+}
+
+.page-link:hover {
+    background-color: #ffffff;
+}
+
+.page-link:hover {
+    color: #006221;
+    /* Defina a cor desejada para o hover */
+}
+
+.btn-boletim{
+    text-align: left;
+    background-color: rgb(201,201,201);
+    /* font-weight: 700; */
+}
+
+.btn-boletim:hover{
+    background-color: rgb(139, 139, 139);
+}
+
+input[type=checkbox]
+{
+  /* Double-sized Checkboxes */
+  -ms-transform: scale(2); /* IE */
+  -moz-transform: scale(3); /* FF */
+  -webkit-transform: scale(2); /* Safari and Chrome */
+  -o-transform: scale(2); /* Opera */
+  transform: scale(2);
+  padding: 10px;
+}
+
+/* Might want to wrap a span around your checkbox text */
+.checkboxtext
+{
+  /* Checkbox text */
+  font-size: 110%;
+  display: inline;
+}

@@ -1,0 +1,116 @@
+{% load static %}
+{% include 'parciais/head.html'%}
+
+<body>
+
+    <form action="{% url 'salvar_ato' %}" method="POST">
+        {% csrf_token %}
+
+        <div id="container-fluid">
+            <div class="row gap-1 m-2 h-100">
+
+                <section class="col-md-6 h-100 rounded">
+                    <h5 class="titulo">FORMULÁRIO AVULSO</h5>
+                    <div class="card teste " aria-hidden="true">
+                        <div class="card-body placeholder-glow" id="placeholder">
+                            <h5 class="card-title ">
+                                <span class="placeholder col-6 w-4"></span>
+                            </h5>
+                        </div>
+                        
+                        <textarea class="formulario_avulso-texteara" rows="27" name="textoNormativo"></textarea>
+                        
+                    </div>
+                </section>
+
+                <section class="col-md-5 col-sm-12 rounded" id="formulario_autoridade">
+
+                    <div class="row gap-1">
+                        <h5 class="titulo">Autoridade</h5>
+
+                        <textarea rows="5" class="form-control" placeholder="Escreva a Ementa!"
+                            name="textoEmenta"></textarea>
+
+
+                        <input class="form-control" id="nomes_de_autoridades" placeholder="Nome da autoridade"
+                            name="nomeAutoridadeAssinantePrimaria" list="opcoes_autoridades">
+
+                        <datalist id="opcoes_autoridades">
+                            {% for autoridade in autoridades %}
+                            <option value="{{ autoridade.id }}">{{ autoridade.nome }}</option>
+                            {% endfor %}
+                        </datalist>
+
+                        <input class="form-control" id="nomes_de_autoridades" placeholder="Nome da segunda autoridade"
+                            name="nomeAutoridadeAssinanteSecundaria" list="opcoes_autoridades">
+                        <datalist id="opcoes_autoridades">
+                            {% for autoridade in autoridades %}
+                            <option value="{{ autoridade.id }}">{{ autoridade.nome }}</option>
+                            {% endfor %}
+                        </datalist>
+
+                        <select class="form-control" name="tipoAto" id="tipo_ato">
+                            <option disabled selected>Ato</option>
+                            <option value="Portaria">Portaria</option>
+                            <option value="Resolução">Resolução</option>
+
+                        </select>
+
+                        <select class="form-control" name="acao">
+                            <option disabled selected>Ação</option>
+                            <option value="AÇÃO 1">AÇÃO 1</option>
+                            <option value="AÇÃO 2">AÇÃO 2</option>
+                            <option value="AÇÃO 3">AÇÃO 3</option>
+                        </select>
+
+                        <input type="text" class="form-control" placeholder="N°" name="numeroAto">
+                        <input type="text" class="form-control" placeholder="Ano" name="anoDePublicacao">
+                        <input type="text" class="form-control" placeholder="Seção" name="secaoDOE">
+                        <input type="text" class="form-control" placeholder="N° do Diario" name="numeroDOE">
+                        <input type="text" class="form-control" placeholder="Página" name="paginaDOE">
+
+                        <select class="form-control" name="cargoDaAutoridadePrimaria">
+                            <option disabled selected>Autoridade</option>
+                            <option value="REITOR">REITOR</option>
+                            <option value="REITOR EM EXERCÍCIO">REITOR EM EXERCÍCIO</option>
+                            <option value="PRO-REITOR">PRO-REITOR</option>
+                            <option value="PRO-REITOR EM EXERCÍCIO">PRO-REITOR EM EXERCÍCIO</option>
+                            <option value="VICE-REITOR">VICE-REITOR</option>
+                            <option value="VICE-REITOR EM EXERCÍCIO">VICE-REITOR EM EXERCÍCIO</option>
+                            <option value="PRESIDENTE DA CÂMARA">PRESIDENTE DA CÂMARA</option>
+                        </select>
+
+                        <select class="form-control" name="cargoDaAutoridadeSecundaria">
+                            <option disabled selected>Autoridade</option>
+                            <option value="REITOR">REITOR</option>
+                            <option value="REITOR EM EXERCÍCIO">REITOR EM EXERCÍCIO</option>
+                            <option value="PRO-REITOR">PRO-REITOR</option>
+                            <option value="PRO-REITOR EM EXERCÍCIO">PRO-REITOR EM EXERCÍCIO</option>
+                            <option value="VICE-REITOR">VICE-REITOR</option>
+                            <option value="VICE-REITOR EM EXERCÍCIO">VICE-REITOR EM EXERCÍCIO</option>
+                            <option value="PRESIDENTE DA CÂMARA">PRESIDENTE DA CÂMARA</option>
+                        </select>
+
+
+                        <input class="form-control" type="file" id="formFile">
+
+                        <button id="" type="submit" class="btn btn-success float-right">
+                            Salvar
+                        </button>
+                    </div>
+
+
+                </section>
+
+            </div>
+        </div>
+
+    </form>
+
+    <script>
+        window.addEventListener("load", function () {
+            const placeholder = document.querySelector('#placeholder');
+            placeholder.remove();
+        });
+    </script>
+</body>

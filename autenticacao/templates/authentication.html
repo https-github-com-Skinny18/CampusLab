@@ -1,0 +1,43 @@
+{% load static %}
+{% include 'parciais/head.html'%}
+
+<body>
+   <div class="jumbotron d-flex justify-content-center align-items-center h-100">
+
+      <div class="d-flex justify-content-center align-items-center flex-column card h-75 w-25 shadow-lg gap-4">
+         <img src="{% static 'images/LOGO VERTICAL 250.png' %}" alt="">
+
+         <header class="h1 font-weight-bold text-success mt-4">LEGISLAÇÃO</header>
+
+         <form action="/" id="email-form">
+
+            <div class="form-floating mb-3">
+              <input type="email" class="form-control" id="email" placeholder="name@example.com">
+              <label for="email">E-mail</label>
+            </div>
+          
+            <div class="form-floating mb-3 input-group">
+              <input type="password" class="form-control" id="password" placeholder="123">
+              <label for="password">Senha</label>
+              <span class="input-group-text" id="basic-addon1">
+                <i class="fa fa-eye" id="show-password"></i>
+              </span>
+            </div>
+          
+            <div class="pass">
+              <a href="https://oberon.uea.edu.br/esqueceu-senha" class="forget-password" target="_blank">Esqueceu a Senha?</a>
+            </div>
+            <div class="field">
+              <button class="btn btn-success font-weight-bold w-100" onclick="validateForm(event)">Entrar</button>
+            </div>
+          </form>
+      </div>
+
+   </div>
+
+
+   <script src="{% static 'js/auth.js' %}"></script>
+   <script src="{% static 'js/validation.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,60 @@
+class GerarPDFView(View):
+    def get(self, request, ato_id):
+        ato = get_object_or_404(AtoNormativ, id=ato_id)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{ato.ementa}.pdf"'
+        pdf = canvas.Canvas(response, pagesize=letter)
+
+        # Definir o tamanho e a posição da imagem
+        logo_path = '/home/gabriel/Documentos/uea-news/templates/static/images/logo-governo.jpg'
+        logo_width = 270
+        logo_height = 115
+        logo_x = (letter[0] - logo_width) / 2
+        logo_y = letter[1] - 100
+
+        # Desenhar a imagem em todas as páginas
+        def draw_image():
+            pdf.drawImage(logo_path, logo_x, logo_y, width=logo_width, height=logo_height)
+
+        # Definir a posição e o estilo do texto do cabeçalho
+        pdf.setFont('Helvetica-Bold', 12)
+        pdf.drawString(240, 680, ato.tipo_ato.upper())
+
+        # Restante do código...
+
+        def add_page():
+            pdf.showPage()
+            draw_image()
+            pdf.setFont('Helvetica-Bold', 12)
+            pdf.drawString(240, 680, ato.tipo_ato.upper())
+
+        x = 70
+        y = 650
+        limite_largura = 550
+        limite_altura = 100
+
+        draw_image()
+
+        for palavra in palavras:
+            largura_palavra = pdf.stringWidth(palavra, fonte, tamanho_fonte)
+
+            if x + largura_palavra < limite_largura:
+                pdf.drawString(x, y, palavra + " ")
+                x += largura_palavra + pdf.stringWidth(" ", fonte, tamanho_fonte)
+            else:
+                x = 70
+                y -= tamanho_fonte + 5
+
+                if y < limite_altura:
+                    add_page()
+                    y = 700
+
+                pdf.drawString(x, y, palavra + " ")
+                x += largura_palavra + pdf.stringWidth(" ", fonte, tamanho_fonte)
+
+        # Restante do código...
+
+        pdf.showPage()
+        pdf.save()
+
+        return response
