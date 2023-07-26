@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+{% include 'parciais/head.html' %}
+
+<body>
+	<div id="grid">
+		<div id="conteudo_core">
+
+			{% include 'parciais/navbar.html'%}
+
+			<form id="form_pesquisa" class="p-3 w-100 d-flex justify-content-end form-inline caixa_de_pesquisa">
+				<div>
+					<input class="form-control mr-sm-2" id="filter" type="search" name="texto" placeholder="Pesquisar">
+				</div>
+
+				<div>
+					<select class="form-control cor_texto_pesquisar " name="ano">
+						<option value="">Selecione um ano</option>
+						<option value="2022">2022</option>
+						<option value="2021">2021</option>
+						<option value="2020">2020</option>
+						<option value="2019">2019</option>
+						<option value="2000">2000</option>
+					</select>
+				</div>
+				<button class="btn btn-outline-success my-2 my-sm-0" type="submit">Pesquisar</button>
+			</form>
+
+			<div class="d-flex flex-wrap gap-3 justify-content-center">
+				{% for ato in atos %}
+
+				<div class="card card-body-ato">
+					<a href="{% url 'view' ato.id %}" class="card card-link text-decoration-none card-body">
+						<h5 class="card-title">{{ ato.tipo_ato|upper }}</h5>
+						<h6 class="card-subtitle mb-2 text-muted">{{ ato.assinante1 }} / {{ ato.autoridade1 }}
+							/ {{ato.dt_cadastro }} </h6>
+						<p class="card-text">{{ ato.ementa|truncatechars:100}}</p>
+					</a>
+				</div>
+
+
+				{% endfor %}
+			</div>
+
+			{% if atos.has_other_pages %}
+			<ul class="pagination p-4 d-flex justify-content-center align-items-center">
+				{% if atos.has_previous %}
+				<li class="page-item"><a class="page-link" href="?page={{ atos.previous_page_number }}">Anterior</a>
+				</li>
+				{% else %}
+				<li class="page-item disabled"><span class="page-link">Anterior</span></li>
+				{% endif %}
+				{% for num in atos.paginator.page_range %}
+				{% if atos.number == num %}
+				<li class="page-item active"><span class="page-link">{{ num }} <span
+							class="sr-only">(current)</span></span></li>
+				{% elif num > atos.number|add:'-3' and num < atos.number|add:'3' %} <li class="page-item"><a
+						class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+					{% endif %}
+					{% endfor %}
+					{% if atos.has_next %}
+					<li class="page-item"><a class="page-link" href="?page={{ atos.next_page_number }}">Próxima</a></li>
+						{% else %}
+					<li class="page-item disabled"><span class="page-link">Próxima</span></li>
+					{% endif %}
+			</ul>
+			{% endif %}
+
+
+			<script>
+				const filterElement = document.querySelector('#filter')
+				const cards = document.querySelectorAll('.card.card-body-ato')
+
+				filterElement.addEventListener('input', filterCards)
+
+				function filterCards() {
+					if (filterElement.value != '') {
+						for (let card of cards) {
+							let title = card.querySelector('h5').textContent.toLowerCase();
+							let description = card.querySelector('p').textContent.toLowerCase();
+							let filterText = filterElement.value.toLowerCase();
+							if (!(title.includes(filterText) || description.includes(filterText))) { // modificação
+								card.style.display = "none";
+							} else {
+								card.style.display = "block";
+							}
+						}
+					} else {
+						for (let card of cards) {
+							card.style.display = "block";
+						}
+					}
+				}
+			</script>
+
+		</div>
+
+	</div>
+	{% include 'parciais/footer.html'%}
+</body>
+</html>

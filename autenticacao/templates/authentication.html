@@ -1,0 +1,65 @@
+{% load static %}
+{% include 'parciais/head.html'%}
+
+<body>
+   <div class="jumbotron d-flex justify-content-center align-items-center h-100">
+
+      <div class="d-flex justify-content-center align-items-center flex-column card h-75 w-25 shadow-lg gap-4">
+         <img src="{% static 'images/LOGO VERTICAL 250.png' %}" alt="">
+
+         <header class="h1 font-weight-bold text-success mt-4">LEGISLAÇÃO</header>
+
+         <form action="{% url 'autenticacao' %}" method="post" id="email-form">
+            {% csrf_token %}
+            
+
+            <div class="form-floating mb-3">
+              <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com">
+              <label for="email">E-mail</label>
+            </div>
+          
+            <div class="form-floating mb-3 input-group">
+              <input type="password" class="form-control" id="password" name="password" placeholder="123">
+              <label for="password">Senha</label>
+              <span class="input-group-text" id="basic-addon1">
+                <i class="fa fa-eye" id="show-password"></i>
+              </span>
+            </div>
+            {% if messages %}
+              <ul class="messages">
+                {% for message in messages %}
+                  <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+              </ul>
+          {% endif %}
+          
+            <div class="pass">
+              <a href="https://oberon.uea.edu.br/esqueceu-senha" class="forget-password" target="_blank">Esqueceu a Senha?</a>
+            </div>
+            <div class="field">
+              <button class="btn btn-success font-weight-bold w-100">Entrar</button>
+            </div>
+          </form>
+      </div>
+
+   </div>
+   <script>
+    // Função para esconder as mensagens após 5 segundos
+    function hideMessages() {
+      setTimeout(function() {
+        var messages = document.getElementsByClassName('messages')[0];
+        if (messages) {
+          messages.style.display = 'none';
+        }
+      }, 2000); // 5000 milissegundos = 5 segundos
+    }
+  
+    // Chama a função quando a página é carregada
+    document.addEventListener('DOMContentLoaded', hideMessages);
+  </script>
+
+   <script src="{% static 'js/auth.js' %}"></script>
+   <script src="{% static 'js/validation.js' %}"></script>
+</body>
+
+</html>
