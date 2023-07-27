@@ -18,7 +18,7 @@
       <div class="form-group col-md-12">
         <label for="texto_normativo titulo">Texto Normativo</label>
         <textarea class="form-control" rows="9" id="texto_normativo" name="texto_normativo">{{ ato.texto_normativo|safe }}</textarea>
-    </div>
+      </div>
       <div class="form-group col-md-12">
         <label for="ementa">Ementa</label>
         <textarea   class="form-control"  rows="7" id="ementa" name="ementa" >{{ ato.ementa }}</textarea>
@@ -55,10 +55,9 @@
       </div>
       <div class="form-group col-md-3">
         <label for="tipoAto">tipo_ato</label>
-        <select class="form-control" id="tipoAto" name="tipoAto">
-          {% for tipoA in autoridades %}
-          <option value="{{ tipo_ato.id }}" {% if autoridade.id == tipo_ato.id %}selected{% endif %}>{{ AtoNormativ.tipo_ato }}</option>
-          {% endfor %}
+        <select class="form-control" id="tipoAto" name="tipo_ato">
+            <option value="portaria" {% if ato.tipo_ato == "portaria" %} selected {% endif %}>Portaria</option>
+            <option value="Resolução" {% if ato.tipo_ato == "Resolução" %} selected {% endif %}>Resolução</option>
         </select>
       </div>
       
@@ -93,7 +92,7 @@
         <select class="form-control" id="status" name="status">
           {% for choice in ato.STATUS_CHOICES %}
             {% if choice.0 == ato.status %}
-              <option value="{{ choice.0 }}" selected>{{ choice.1 }}</option>
+              <option value="{{ ato.tipo_ato }}" selected>{{ ato.tipo_ato }}</option>
             {% else %}
               <option value="{{ choice.0 }}">{{ choice.1 }}</option>
             {% endif %}

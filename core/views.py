@@ -18,6 +18,13 @@ from django.contrib.auth.decorators import login_required
 from reportlab.lib.pagesizes import letter
 from .models import AtoNormativ, Autoridade
 from django.contrib.auth import logout
+from reportlab.lib.pagesizes import letter
+from datetime import datetime
+from reportlab.lib import colors
+from core.Portaria import Portaria
+from core.Boletim import Boletim
+from django.db.models import Q
+from .models import BoletimGerado
 
 def index(request):
     return render(request, 'index.html')
@@ -29,6 +36,28 @@ def view(request, ato_id):
 
 # def authetication(request):
 #     return render(request, 'authentication.html')
+def salvar_boletim(request, ato_ids):
+        
+        ato_ids_list = [int(id) for id in ato_ids.split(',')]
+
+        
+            # Criar o boletim combinando os atos selecionados
+        atos_selecionados = []
+        for ato_id in ato_ids_list:
+            ato = get_object_or_404(AtoNormativ, id=ato_id)
+            atos_selecionados.append(ato)
+        ids_serializados = ','.join(str(id) for id in ato_ids_list)
+        print(ids_serializados)
+        # Salvar o PDF gerado no banco de dados
+        boletim = BoletimGerado.objects.create(
+            portarias_fks=ids_serializados,
+            titulo=f"Boletim - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            conteudo_pdf=atos_selecionados,
+        )
+        {"boletim_id": boletim.id}
+        print(boletim.id)
+        messages.add_message(request, constants.SUCCESS, 'Boletim salvo com sucesso.')
+        return redirect('boletins_salvos')
 
 @login_required
 def edit(request):
@@ -54,6 +83,7 @@ def salvar_ato(request):
         return render(request, 'edit.html')
 
     elif request.method == "POST":
+        
         textoNormativo = request.POST.get("textoNormativo")
         textoEmenta = request.POST.get("textoEmenta")
         nomeAutoridadeAssinantePrimaria = request.POST.get("nomeAutoridadeAssinantePrimaria")
@@ -66,34 +96,36 @@ def salvar_ato(request):
         numeroDOE = request.POST.get("numeroDOE")
         cargoDaAutoridadePrimaria = request.POST.get("cargoDaAutoridadePrimaria")
         cargoDaAutoridadeSecundaria = request.POST.get("cargoDaAutoridadeSecundaria")
+        textoNormativoSantinizado = strip_tags(textoNormativo)
+        textoEmentaSanitizado = strip_tags(textoEmenta)
 
-    try:
-        nomeAutoridadeAssinantePrimaria = Autoridade.objects.get(id=nomeAutoridadeAssinantePrimaria)
-        nomeAutoridadeAssinanteSecundaria = Autoridade.objects.get(id=nomeAutoridadeAssinanteSecundaria)
+        try:
+            nomeAutoridadeAssinantePrimaria = Autoridade.objects.get(id=nomeAutoridadeAssinantePrimaria)
+            nomeAutoridadeAssinanteSecundaria = Autoridade.objects.get(id=nomeAutoridadeAssinanteSecundaria)
 
-        # Salvar os dados no banco de dados
-        AtoNormativ.objects.create(
-            texto_normativo=textoNormativo,
-            ementa=textoEmenta,
-            ano=anoDePublicacao,
-            numero=numeroAto,
-            doe_pagina=paginaDOE,
-            doe_secao=secaoDOE,
-            doe_numero=numeroDOE,
-            assinante1=nomeAutoridadeAssinantePrimaria,
-            assinante2=nomeAutoridadeAssinanteSecundaria,
-            autoridade1=cargoDaAutoridadePrimaria,
-            autoridade2=cargoDaAutoridadeSecundaria,
-            tipo_ato=tipoAto,
-            status='revisao',
-        )
+            # Salvar os dados no banco de dados
+            AtoNormativ.objects.create(
+                texto_normativo=textoNormativoSantinizado,
+                ementa=textoEmentaSanitizado,
+                ano=anoDePublicacao,
+                numero=numeroAto,
+                doe_pagina=paginaDOE,
+                doe_secao=secaoDOE,
+                doe_numero=numeroDOE,
+                assinante1=nomeAutoridadeAssinantePrimaria,
+                assinante2=nomeAutoridadeAssinanteSecundaria,
+                autoridade1=cargoDaAutoridadePrimaria,
+                autoridade2=cargoDaAutoridadeSecundaria,
+                tipo_ato=tipoAto,
+                status='revisao',
+            )
+            
+            messages.add_message(request, constants.SUCCESS, 'Salvo com sucesso.')
+            return render(request, 'edit.html')
         
-        messages.add_message(request, constants.SUCCESS, 'Salvo com sucesso.')
-        return render(request, 'edit.html')
-    
-    except:
-        messages.add_message(request, constants.WARNING, 'O sistema apresenta falhas internas.')
-        return redirect('../edit/')
+        except:
+            messages.add_message(request, constants.WARNING, 'O sistema apresenta falhas internas.')
+            return redirect('../edit/')
 
 def mm2p(milimetros):
     return milimetros / 0.352777
@@ -102,144 +134,269 @@ def mm2p(mm_value):
     return mm_value * 2.83465
 
 class GerarPDFView(View):
-    def get(self, request, ato_id):
-        # Recupera o objeto Ato correspondente ao ID fornecido
-        ato = get_object_or_404(AtoNormativ, id=ato_id)
 
-        # Cria o objeto HttpResponse com o tipo MIME apropriado para PDF
+    def get(self, request, ato_ids, boletim_id):
+
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{ato.autoridade1}.pdf"'
-        # response['Content-Disposition'] = f'inline; filename="{ato.ementa}.pdf"'
+        response['Content-Disposition'] = f'inline; filename="documento.pdf"'
+        packet = BytesIO()
+         
+        if isinstance(ato_ids, str) and ',' in ato_ids:
+            
+            boletim = Boletim()         
+            pdf = canvas.Canvas(packet)
+            ato_ids_list = [int(id) for id in ato_ids.split(',')]
+            atos = []
+            for i in ato_ids_list:
+                atos.append(get_object_or_404(AtoNormativ, id=i))
+            boletins = get_object_or_404(BoletimGerado, id=boletim_id)
+            print(boletins.id)
+            boletim_path = '/home/lury/Área de Trabalho/projeto/uea-news/templates/static/images/boletim.jpg'
+            # antes: '/home/gabriel/Documentos/uea-news/templates/static/images/boletim.jpg'
+            # '/home/lury/Área de Trabalho/projeto/uea-news/templates/static/images/logo-governo.jpg'
+            CAPA_TITULO = "BOLETIM N°" + str(boletins.id)
+
+            boletim.desenharCapa(pdf, boletim_path, CAPA_TITULO)
+
+            def add_page():
+                pdf.showPage()
+                boletim.draw_header(pdf)
+
+            conta_cata_subtitulo = 'UNIVERSIDADE DO ESTADO DO AMAZONAS'
+            doe = CAPA_TITULO
+            boletim.desenharContraCapa(pdf, doe, conta_cata_subtitulo)
+
+            pdf.setFont('Helvetica-Bold', 12)
+            
+            assinante_unicas = []
+            autoridade = ""
+            asdf = 620
+            y = 600
+            for ato in atos:
+                assinante_atual = str(ato.assinante1).split('/')[0]
+                assinante2 = str(ato.assinante2)
+                autoridade = ato.autoridade1
+                autoridade2 = ato.autoridade2
+                print(autoridade2)
+                if assinante_atual and assinante_atual not in assinante_unicas:
+                    assinante_unicas.append(assinante_atual)
+                    pdf.setFont('Helvetica', 12)
+                    pdf.drawString(280, asdf, assinante_atual)
+                    pdf.drawString(280, y, assinante2)
+                    pdf.setFont('Helvetica-Bold', 12)
+                    pdf.drawString(280, 610, autoridade)
+                    pdf.drawString(280, 580, autoridade2)
+
+                    y -= 20
+                    asdf -= 20
 
 
-        # Cria o objeto PDF com o objeto HttpResponse
-        pdf = canvas.Canvas(response, pagesize=letter)
+            add_page()
 
-        # Adiciona o texto do tipo do ato ao PDF
-        try:
-            pdf.drawString(10, 10, ato.tipo_ato)
-        except AttributeError:
-            pdf.drawString(10, 10, "Tipo do ato não disponível")
+            y = 650 
+           
+            boletim.desenharSumario(pdf, doe, conta_cata_subtitulo)
+            for ato in atos:
 
-        # Adiciona a imagem ao topo da página
-        logo_path = '/home/lury/Área de Trabalho/projeto/uea-news/templates/static/images/logo-governo.jpg'
-        logo_width = 270  # largura desejada da imagem
-        logo_height = 115  # altura desejada da imagem
+                ato_posicao = pdf.stringWidth(ato.tipo_ato, 'Helvetica-Bold', 12)
 
-        # Calcula a posição X (horizontal) para centralizar a imagem
-        logo_x = (letter[0] - logo_width) / 2
+                data_str = str(ato.doe_data)
+                ano = data_str[0:4]
 
-        # Calcula a posição Y (vertical) para centralizar a imagem
-        logo_y = letter[1] - 100
+                doe_str = str(ato.numero)
+                doe = "PORTARIA N°" + doe_str + "/" + ano
+                pdf.setFont('Helvetica-Bold', 12)
+                pdf.drawString(180, y, doe)
+                pdf.setFont("Helvetica", 12)
+                y -= 20 
+            add_page()
 
-        # Desenha a imagem com o tamanho e posição desejados
-        pdf.drawImage(logo_path, logo_x, logo_y, width=logo_width, height=logo_height)
+            
+            
+            x = 70
+            y = 650
+            tamanho_fonte = 12
+            limite_largura = 520
+            limite_altura = 100
+            espacamento_margem = 10  # Espaçamento desejado para as margens
 
-        linha_comprimento = 550  # define o comprimento da linha
-        linha_y = logo_y - (-20)  # define a posição vertical da linha
+        
+            for ato in atos:
+                assinatura = str(ato.assinante1).split('/')[0]
+                assinatura2 = ato.assinante2
 
-        # Desenha a linha logo abaixo da imagem
-        pdf.line((letter[0] - linha_comprimento) / 2, linha_y, (letter[0] + linha_comprimento) / 2, linha_y)
+                paragrafos = ato.texto_normativo.splitlines()
+                for index, paragrafo in enumerate(paragrafos):
+                    if index == 0:
+                        pdf.setFont("Helvetica-Bold", 12)
+                        pdf.drawString(240, y, ato.tipo_ato.upper())
 
-        # Define a altura do footer
-        footer_height = 12
+                        ato_posicao = pdf.stringWidth(ato.tipo_ato, 'Helvetica-Bold', 12)
+                        n_posicao = 304 + ato_posicao + -43
+                        limite_x = 550  # Limite horizontal do documento
+                        if n_posicao > limite_x:
+                            n_posicao = limite_x
 
-        # Desenha a linha como footer
-        footer_y = footer_height
+                        data_str = str(ato.doe_data)
+                        ano = data_str[0:4]
 
-        # Define o novo texto a ser adicionado
-        text = "Governo do Estado do Amazonas"
+                        doe_str = str(ato.numero)
+                        doe = "N°" + doe_str + "/" + ano
 
-        # Define a fonte e o tamanho do texto
-        font_name = "Helvetica-Bold"
-        font_size = 10
-        font_name2 = "Helvetica"
-        font_size2 = 8
+                        pdf.setFont('Helvetica-Bold', 12)
+                        pdf.drawString(n_posicao, y, doe)
+                        pdf.setFont("Helvetica", 12)
 
-        # Define a posição X (horizontal) para centralizar o texto
-        text_x = (letter[0] - pdf.stringWidth(text, font_name, font_size)) / 2
+                        y -= tamanho_fonte + 2
 
-        # Define a posição Y (vertical) do texto
-        text_y = footer_y + 20
+                    if y - tamanho_fonte < limite_altura:
+                        add_page()
+                        y = 650
 
-        # Adiciona o novo texto ao PDF
-        pdf.setFont(font_name, font_size)
-        pdf.drawString(text_x, text_y, text)
+                    # Calcular a largura disponível considerando a margem esquerda e a margem direita
+                    largura_disponivel = limite_largura - x
 
-        # Define o segundo texto a ser adicionado
-        text2 = "Av. Brasil, 3925 - Compensa II - Manaus-AM - CEP 69036-110"
+                    if pdf.stringWidth(paragrafo, 'Helvetica', 12) > largura_disponivel:
+                        # Verificar se o parágrafo completo cabe na página atual
+                        palavras = paragrafo.split(' ')
+                        paragrafo_temp = ''
+                        for palavra in palavras:
+                            if pdf.stringWidth(paragrafo_temp + palavra, 'Helvetica', 12) < largura_disponivel:
+                                paragrafo_temp += palavra + ' '
+                            else:
+                                # Desenhar o parágrafo atual
+                                pdf.drawString(x, y, paragrafo_temp)
+                                # Atualizar a posição vertical para o próximo parágrafo
+                                y -= tamanho_fonte + 2
+                                paragrafo_temp = palavra + ' '
 
-        # Define a posição X (horizontal) para centralizar o texto
-        text2_x = (letter[0] - pdf.stringWidth(text2, font_name, font_size)) / 2
+                        # Desenhar o restante do parágrafo
+                        pdf.drawString(x, y, paragrafo_temp)
+                    else:
+                        # Desenhar o parágrafo completo
+                        pdf.drawString(x, y, paragrafo)
 
-        # Define a posição Y (vertical) do segundo texto
-        text2_y = text_y - font_size - 8
+                    if index == len(paragrafos) - 1:
+                                # Desenhar a assinatura apenas uma vez no final do parágrafo
+                        y_assinatura = y - tamanho_fonte - 1
+                        pdf.setFont("Helvetica-Bold", 12)
+                        pdf.drawString(200, y_assinatura, assinatura.upper())
+                        y = y_assinatura - 15 
+                        pdf.setFont('Helvetica', 12)
+                        pdf.drawString(180,y, 'UNIVERSIDADE DO ESTADO DO AMAZONAS')
+                    y -= tamanho_fonte + 2                    
+                    pdf.setFont("Helvetica-Bold", 12)
+                    pdf.drawString(250, 750, CAPA_TITULO)
+                    data_str = str(ato.doe_data)
+                    ano = data_str[0:4]
 
-        # Adiciona o segundo texto ao PDF
-        pdf.setFont(font_name2, font_size)
-        pdf.drawString(text2_x, text2_y, text2)
+                    pdf.setFont('Helvetica', 12)
+                    pdf.drawString(180, 730, 'UNIVERSIDADE DO ESTADO DO AMAZONAS')
+                    pdf.drawString(300,25, f"{pdf.getPageNumber() + 1}")
+                y -= espacamento_margem 
 
-        # Define a posição X (horizontal) e Y (vertical) da assinatura
-        ass_x = 20
-        ass_y = logo_y - 350
+        else:
 
-        # Define o texto a ser adicionado abaixo da assinatura
-        ass_text = "Assinado por: ANDRÉ LUIZ NUNES ZOGAHIB"
-        ass_text2 = "Data: 10/05/2023"
+            portaria = Portaria()
+            ato = get_object_or_404(AtoNormativ, id=int(ato_ids))
+            pdf = canvas.Canvas(response, pagesize=letter)       
 
-        # Adiciona a assinatura
-        pdf.setFont(font_name2, font_size2)
-        pdf.drawString(ass_x, ass_y, ass_text)
+            FONT = "Helvetica"
+            FONT_BOLD = "Helvetica-Bold"
+            font_size2 = 8
 
-        # Define o texto a ser adicionado abaixo da assinatura
-        data_text = "Data: 10/05/2023 14:00 AM -04:00"
+            pdf.setFont(FONT_BOLD, 12)
 
-        # Define a posição X (horizontal) da data
-        data_x = ass_x
+            data_str = str(ato.doe_data)
+            ano = data_str[0:4]
+            doe = " N°" + str(ato.numero) + "/" + ano
 
-        # Define a posição Y (vertical) da data
-        data_y = ass_y - 10
+            pdf.drawString(240, 680, ato.tipo_ato.upper() + doe)
 
-        # Adiciona o texto da data ao PDF
-        pdf.setFont(font_name2, font_size2)
-        pdf.drawString(data_x, data_y, data_text)
+            def add_page():
+                pdf.showPage()
+                portaria.draw_header(pdf)
+                portaria.draw_footer(pdf)
+            
+            limite_largura = 550
+            limite_altura = 100
 
-        # Desenha a linha de rodapé
-        pdf.line((letter[0] - linha_comprimento) / 2, footer_y - (-35), (letter[0] + linha_comprimento) / 2, footer_y - (-35))
+            MARGIN_LEFT = 50
+            MARGIN_BOTTOM = 650  
+            tamanho_fonte = 12
 
-        # Ajusta a altura do footer para incluir os textos
-        footer_y = text2_y - font_size - 40
+            portaria.draw_header(pdf)
+            portaria.draw_footer(pdf)
 
-        # Quando acabamos de inserir 'coisas no PDF'
-        pdf.showPage()
+            palavras = ato.texto_normativo.split()
+
+            for palavra in palavras:
+                largura_palavra = pdf.stringWidth(palavra, FONT, tamanho_fonte)
+
+                if MARGIN_LEFT + largura_palavra < limite_largura:
+                    pdf.drawString(MARGIN_LEFT, MARGIN_BOTTOM, palavra )
+                    MARGIN_LEFT += largura_palavra + pdf.stringWidth(" ", FONT, tamanho_fonte)
+                else:
+                    MARGIN_LEFT = 50
+                    MARGIN_BOTTOM -= tamanho_fonte + 2
+
+                    if MARGIN_BOTTOM < limite_altura:
+                        add_page()
+                        MARGIN_BOTTOM = 700
+
+                    pdf.drawString(MARGIN_LEFT, MARGIN_BOTTOM, palavra + " ")
+                    MARGIN_LEFT += largura_palavra + pdf.stringWidth("", FONT, tamanho_fonte)
+
+            altura_texto_embaixo = pdf.stringWidth(ato.assinante2, FONT, 12)
+
+            y_embaixo = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -20  # Ajuste conforme necessário
+            y_abaixo = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -9
+        
+            assinante = ato.assinante2
+
+            pdf.setFont(FONT_BOLD, tamanho_fonte)
+
+            largura_assinante = pdf.stringWidth(assinante, FONT_BOLD, tamanho_fonte)
+
+            y_assinante = y_embaixo + tamanho_fonte
+
+            y_autoridade = y_abaixo + tamanho_fonte
+
+            def centralizar(text):
+                return ((letter[0] - text) / 2)
+
+            pdf.drawString(centralizar(largura_assinante), y_assinante, assinante.upper())
+
+            TEXTO_FUNCAO = ato.autoridade1 + " Da Universidade Do Estado Do Amazonas"
+            
+            largura_autoridade = pdf.stringWidth(TEXTO_FUNCAO, FONT, tamanho_fonte)
+
+            pdf.setFont(FONT, tamanho_fonte)
+
+            pdf.drawString(centralizar(largura_autoridade), y_autoridade, TEXTO_FUNCAO)
+            
+            DATE_MARGIN_X = 50
+            altura_texto_embaixo = pdf.stringWidth(ato.assinante2, FONT, 12)
+
+            y_outro = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -10
+
+            data_objeto = datetime.strptime(data_str[:10], "%Y-%m-%d")
+            data_br = data_objeto.strftime("%d-%m-%Y")
+            
+            TEXT_ASSINATURA = "Assinado por: " + ato.assinante2
+            TEXT_DATE = f"Data: {data_br}"
+
+            DATA_POSITION_Y = y_outro - 10
+
+            pdf.setFont(FONT, font_size2)
+
+            pdf.drawString(DATE_MARGIN_X, y_outro, TEXT_ASSINATURA)
+            pdf.drawString(DATE_MARGIN_X, DATA_POSITION_Y, TEXT_DATE)
+
         pdf.save()
-
-        # Retorna o HttpResponse contendo o PDF gerado
+        response.write(packet.getvalue())
         return response
-    
-# def gerar_pdf(request, ato_id):
-#     # Recupera o objeto Ato correspondente ao ID fornecido
-#     ato = AtoNormativ.objects.get(id=ato_id)
 
-#     # Cria o objeto HttpResponse com o tipo MIME apropriado para PDF
-#     response = HttpResponse(content_type='application/pdf')
-#     response['Content-Disposition'] = f'attachment; filename="{ato.autoridade1}.pdf"'
-
-#     # Cria o objeto PDF com o objeto HttpResponse
-#     pdf = canvas.Canvas(response)
-
-#     # Adiciona o texto do tipo do ato ao PDF
-#     try:
-#         pdf.drawString(mm, mm*265, ato.tipo_ato)
-#     except AttributeError:
-#         pdf.drawString(mm, mm*265, "Tipo do ato não disponível")
-
-#     # Adiciona outros elementos ao PDF...
-
-#     # Fecha o objeto PDF e retorna o HttpResponse
-#     pdf.showPage()
-#     pdf.save()
-#     return response
         
 
 def editar_ato(request, ato_id):
@@ -286,6 +443,14 @@ def aprovados(request):
     context = paginar(atos_list, 16, request);
     return render(request, 'main.html', context)
 
+def boletim(request):
+    atos_list = AtoNormativ.objects.filter(status='aprovado')
+    context_paginacao = paginar(atos_list, 18, request)
+
+    # Combinando os dois contextos em um único dicionário
+    context = {**context_paginacao}
+
+    return render(request, 'boletim.html', context)
 @login_required
 def cancelados(request):
     atos_list = AtoNormativ.objects.filter(status='cancelado')
@@ -309,3 +474,21 @@ def pendentes(request):
     atos_list = AtoNormativ.objects.filter(status='pendente')
     context = paginar(atos_list, 16, request);
     return render(request, 'main.html', context)
+
+def pesquisar(request):
+    if request.method == 'GET':
+        termo_pesquisa = request.GET.get('pesquisa', '')  # Obtém o termo de pesquisa do parâmetro GET 'pesquisa'
+        atos = AtoNormativ.objects.filter(texto_normativo__icontains=termo_pesquisa)  # Filtra os atos com base no termo de pesquisa
+        context = {'atos': atos}
+        return render(request, 'resultado_pesquisa.html', context)
+
+def boletins_salvos(request):
+    boletim = BoletimGerado.objects.all() 
+
+    for b in boletim:
+        ato_normativ_index = b.conteudo_pdf.find('AtoNormativ:')
+        if ato_normativ_index != -1:
+            b.conteudo_pdf = b.conteudo_pdf[ato_normativ_index + len('AtoNormativ:'):]
+        else:
+            b.conteudo_pdf = b.conteudo_pdf
+    return render(request, 'boletins_salvos.html',  {'boletim': boletim})

@@ -9,7 +9,7 @@
 
 			{% include 'parciais/navbar.html'%}
 
-			<form id="form_pesquisa" class="p-3 w-100 d-flex justify-content-end form-inline caixa_de_pesquisa">
+			<form id="form_pesquisa" method="GET" action="{% url 'pesquisar' %}" class="p-3 w-100 d-flex justify-content-end form-inline caixa_de_pesquisa">
 				<div>
 					<input class="form-control mr-sm-2" id="filter" type="search" name="texto" placeholder="Pesquisar">
 				</div>
@@ -69,29 +69,29 @@
 
 
 			<script>
-				const filterElement = document.querySelector('#filter')
-				const cards = document.querySelectorAll('.card.card-body-ato')
+				// const filterElement = document.querySelector('#filter')
+				// const cards = document.querySelectorAll('.card.card-body-ato')
 
-				filterElement.addEventListener('input', filterCards)
+				// filterElement.addEventListener('input', filterCards)
 
-				function filterCards() {
-					if (filterElement.value != '') {
-						for (let card of cards) {
-							let title = card.querySelector('h5').textContent.toLowerCase();
-							let description = card.querySelector('p').textContent.toLowerCase();
-							let filterText = filterElement.value.toLowerCase();
-							if (!(title.includes(filterText) || description.includes(filterText))) { // modificação
-								card.style.display = "none";
-							} else {
-								card.style.display = "block";
-							}
-						}
-					} else {
-						for (let card of cards) {
-							card.style.display = "block";
-						}
-					}
-				}
+				// function filterCards() {
+				// 	if (filterElement.value != '') {
+				// 		for (let card of cards) {
+				// 			let title = card.querySelector('h5').textContent.toLowerCase();
+				// 			let description = card.querySelector('p').textContent.toLowerCase();
+				// 			let filterText = filterElement.value.toLowerCase();
+				// 			if (!(title.includes(filterText) || description.includes(filterText))) { // modificação
+				// 				card.style.display = "none";
+				// 			} else {
+				// 				card.style.display = "block";
+				// 			}
+				// 		}
+				// 	} else {
+				// 		for (let card of cards) {
+				// 			card.style.display = "block";
+				// 		}
+				// 	}
+				// }
 			</script>
 
 		</div>

@@ -1,0 +1,133 @@
+{% load static %}
+{% include 'parciais/head.html'%}
+
+<div id="grid">
+    <div id="conteudo_core">
+
+        {% include 'parciais/navbar.html'%}
+
+        <form id="form_pesquisa" class="p-3 w-100 d-flex justify-content-end form-inline caixa_de_pesquisa">
+            <div>
+                <input class="form-control mr-sm-2" id="filter" type="search" name="pesquisar" placeholder="Pesquisar">
+            </div>
+
+            <div>
+                <select class="form-control cor_texto_pesquisar " name="ano">
+                    <option value="">Selecione um ano</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <option value="2020">2020</option>
+                    <option value="2019">2019</option>
+                    <option value="2000">2000</option>
+                </select>
+            </div>
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Pesquisar</button>
+        </form>
+        <div class="m-4 d-flex justify-content-between align-items-center">
+            <p id="contador-paragrafo" class="text-center" style="display: none;">Portarias selecionadas: <span
+                    id="contador">0</span></p>
+            {% with ato=atos.0 %}
+            <a href="#" id="botao" style="display: none;" target="_blank"
+                class="w-25 bg-light text-center p-2 text-reset  rounded  ">
+                <i class="bi bi-download fa-2x"></i>
+            </a>
+            {% endwith %}
+        </div>
+
+        <div class="m-4">
+            {% for ato in atos %}
+            {% if ato.tipo_ato == 'portaria' %}
+            <div class="mb-2 card card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'view' ato.id %}" class="card-title text-decoration-none">
+                        <h5 class="card-title">{{ ato.tipo_ato|upper }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ ato.assinante1 }} / {{ ato.autoridade1 }}
+                            / {{ato.dt_cadastro }} </h6>
+                        <p class="card-text">{{ ato.ementa|truncatechars:100}}</p>
+                    </a>
+                    <input type="checkbox" data-ato-id="{{ ato.id }}" />
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const filterElement = document.querySelector('#filter')
+    const cards = document.querySelectorAll('.card.card-body')
+
+    var atoIDs = [];
+    var botao = document.getElementById("botao");
+    var contadorParagrafo = document.getElementById("contador-paragrafo");
+    var contadorElement = document.getElementById("contador");
+
+    // Função para atualizar o link de download com os IDs dos atos selecionados
+    function updateDownloadLink() {
+        // Atualize o contadorElement com a contagem dos IDs dos atos selecionados
+        contadorElement.textContent = atoIDs.length;
+
+        // Mostrar/ocultar o contadorParagrafo e botao com base na contagem dos IDs dos atos selecionados
+        if (atoIDs.length > 0) {
+            contadorParagrafo.style.display = "block";
+            botao.style.display = "block";
+        } else {
+            contadorParagrafo.style.display = "none";
+            botao.style.display = "none";
+        }
+
+        // Construa a URL com os IDs dos atos selecionados
+        var url = "{% url 'salvar_boletim' ato_ids='-' %}".replace('-', atoIDs.join(','));
+
+        // Atualize o atributo href do link de download
+        botao.href = url;
+        botao2.href = url2
+    }
+
+    // Obtenha todos os inputs de checkbox
+    var checkboxInputs = document.querySelectorAll('input[type="checkbox"]');
+
+    // Adicione os event listeners aos inputs de checkbox
+    checkboxInputs.forEach(function (input) {
+        input.addEventListener('click', function () {
+            var atoID = this.getAttribute('data-ato-id'); // Supondo que o valor do checkbox seja o ID do ato
+
+            // Verifique se o checkbox está marcado e adicione/remova o ID do ato do array
+            if (this.checked) {
+                atoIDs.push(atoID);
+            } else {
+                var index = atoIDs.indexOf(atoID);
+                if (index !== -1) {
+                    atoIDs.splice(index, 1);
+                }
+            }
+
+            updateDownloadLink();
+        });
+    });
+
+    filterElement.addEventListener('input', filterCards);
+
+    function filterCards() {
+        if (filterElement.value != '') {
+            for (let card of cards) {
+                let title = card.querySelector('h5').textContent.toLowerCase();
+                let description = card.querySelector('p').textContent.toLowerCase();
+                let filterText = filterElement.value.toLowerCase();
+                if (!(title.includes(filterText) || description.includes(filterText))) { // modificação
+                    card.style.display = "none";
+                } else {
+                    card.style.display = "block";
+                }
+            }
+        } else {
+            for (let card of cards) {
+                card.style.display = "block";
+            }
+        }
+    }
+</script>
+
+{% include 'parciais/footer.html'%}

@@ -4,6 +4,7 @@ from django.contrib import admin
 from .models import AtoNormativ
 from .models import Autoridade
 from .models import Composicao
+from .models import BoletimGerado
 
 # class AutoridadesAdmin(admin.ModelAdmin):
 #     list_display = ('id', 'nome')
@@ -20,7 +21,7 @@ class Atodmin(admin.ModelAdmin):
     search_fields = (' texto_normativo')
     
 
-
+admin.site.register(BoletimGerado)
 admin.site.register(AtoNormativ)
 admin.site.register(Autoridade)
 admin.site.register(Composicao)

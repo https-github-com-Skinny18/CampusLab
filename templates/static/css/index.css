@@ -119,3 +119,32 @@ body {
     transition: opacity 1s ease;
     color: #ff0404;
   }
+
+  .btn-boletim{
+    text-align: left;
+    background-color: rgb(201,201,201);
+    /* font-weight: 700; */
+}
+
+.btn-boletim:hover{
+    background-color: rgb(139, 139, 139);
+}
+
+input[type=checkbox]
+{
+  /* Double-sized Checkboxes */
+  -ms-transform: scale(2); /* IE */
+  -moz-transform: scale(3); /* FF */
+  -webkit-transform: scale(2); /* Safari and Chrome */
+  -o-transform: scale(2); /* Opera */
+  transform: scale(2);
+  padding: 10px;
+}
+
+/* Might want to wrap a span around your checkbox text */
+.checkboxtext
+{
+  /* Checkbox text */
+  font-size: 110%;
+  display: inline;
+}

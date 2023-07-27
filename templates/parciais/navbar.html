@@ -1,37 +1,48 @@
 {% load static %}
 
 <header>
-    <nav class="navbar navbar-expand-lg navbar-light">
+    <nav class="navbar navbar-expand-lg  navbar-light ">
+
         <div class="container-fluid">
-            <a class="navbar-brand" href="/aprovados">
-                <img id="logo" src="{% static 'images/logobrancouea.png' %}" alt="##">
-            </a>
+
+
+            <a class="navbar-brand" href="/aprovados"><img id="logo" src="{% static 'images/logobrancouea.png' %}"
+                    alt="##"></a>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
-                <i class="bi-list"></i>
+                <i class="bi-list"> </i>
             </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/aprovados/">Aprovados</a>
+
+            <div class="collapse navbar-collapse d-flex justify-content-end" id="navbarSupportedContent">
+                <ul class="navbar-nav nav justify-content-center">
+                    <li class="nav-item" >
+                        <a class="nav-link m-2" href="/boletim/" >Criar Boletim</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/edit/">Criar</a>
+                        <a class="nav-link m-2" href="/aprovados/">Aprovados</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/rascunhos">Rascunhos</a>
+                        <a class="nav-link m-2" href="/edit/">Criar</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/pendentes/">Pendentes</a>
+                        <a class="nav-link m-2" href="/rascunhos">Rascunhos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/revisao/">Revisão</a>
+                        <a class="nav-link m-2" href="/pendentes/">Pendentes</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/cancelados">Cancelados</a>
+                        <a class="nav-link m-2" href="/revisao/">Revisão</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link m-2" href="/cancelados">Cancelados</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link m-2" href="/boletins_salvos">Boletins Salvos</a>
                     </li>
                 </ul>
+
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-perfil">
                         <i class="bi bi-door-closed-fill" id="user"></i>
@@ -39,7 +50,7 @@
                     <ul class="dropdown-menu ">
                         <li><a class="dropdown-item" href="{% url 'deslogar' %}">Sair</a></li>
                     </ul>
-                </div>               
+                </div>   
             </div>
         </div>
     </nav>

@@ -5,7 +5,6 @@ import datetime
 from django.utils.html import strip_tags
 import pytz
 
-
 class Composicao (models.Model):
     # composicao_id = models.AutoField(primary_key=True)
     usario = models.CharField(max_length=80,verbose_name='Usuario')
@@ -17,6 +16,28 @@ class Composicao (models.Model):
     # boletim = models.CharField(max_length=1,verbose_name='caso seja uma boletim')
     db_table = 'Composicao'
         
+# class Usario (models.Model):
+#     usario = models.CharField(max_length=255,primary_key=True)
+    
+# class Emitente (models.Model):
+#     sigla = models.CharField(max_length=255)
+#     nome = models.CharField(max_length=255)
+
+# class TipoLegislacao(models.Model):
+#      tipo = models.CharField(max_length=40, verbose_name='Tipo de ato')
+
+# class EmitenteTipoLeg(models.Model):
+#     tipolegislacao = models.ForeignKey(TipoLegislacao,on_delete=models.CASCADE)
+#     emitente = models.ForeignKey(Emitente,on_delete=models.CASCADE)
+
+#     class Meta:
+#         unique_together = ('tipolegislacao', 'emitente')
+    
+#     # class Meta:
+#     #     primary_key = ('tipolegislacao', 'emitente')
+#     #     verbose_name = 'Emitente-Tipo de Legislação'
+#     #     verbose_name_plural = 'Emitentes-Tipos de Legislação'
+#     #     unique_together = ('tipolegislacao', 'emitente')
 
 
 class Autoridade(models.Model):
@@ -31,13 +52,18 @@ class AtoNormativ(models.Model):
         ('pendente', 'Pendente'),
         ('cancelado', 'Cancelado'),
     ]
-    
+
+    ATO_CHOICES=[
+        ('portaria', 'Portaria'),
+        ('resolucao', 'Resolucao'),
+    ]
     data = models.DateTimeField(default=timezone.datetime(2000, 10, 10, tzinfo=pytz.timezone('America/Manaus')), verbose_name='Data de criação')
     numero = models.PositiveIntegerField(null=False,unique=True, verbose_name='Número')
     # nao esquecer de que chave era unica abaixo
     ano = models.PositiveIntegerField(null=False, verbose_name='Ano')  
     doe_data = models.DateTimeField(auto_now_add=True, verbose_name='Data do Diário Oficial')
     doe_numero = models.PositiveIntegerField(null=True,verbose_name='Número do Diário Oficial')
+    doe_numero_boletim = models.PositiveIntegerField(null=True,verbose_name='Número do Diário Oficial')
     doe_secao = models.CharField(max_length=40, verbose_name='Seção do Diário Oficial')
     doe_pagina = models.CharField(max_length=40, verbose_name='Página do Diário Oficial')
     dt_cadastro = models.DateTimeField(null=False,default=timezone.datetime(2000, 10, 10, tzinfo=pytz.timezone('America/Manaus')),verbose_name='Data de cadastro')
@@ -63,5 +89,15 @@ class AtoNormativ(models.Model):
         return f"{self.texto_normativo}/{self.ementa}"
     
 
+class BoletimGerado(models.Model):
+    portarias_fks = models.CharField(max_length=1000, default='')
+    titulo = models.CharField(max_length=100)
+    conteudo_pdf = models.CharField(max_length=100000, default='')
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.titulo
+
+    
      
    
