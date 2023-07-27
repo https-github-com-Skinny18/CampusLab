@@ -346,13 +346,13 @@ class GerarPDFView(View):
 
                     pdf.drawString(MARGIN_LEFT, MARGIN_BOTTOM, palavra + " ")
                     MARGIN_LEFT += largura_palavra + pdf.stringWidth("", FONT, tamanho_fonte)
+            assinante = str(ato.assinante1).split('/')[0]
 
-            altura_texto_embaixo = pdf.stringWidth(ato.assinante2, FONT, 12)
+            altura_texto_embaixo = pdf.stringWidth(assinante, FONT, 12)
 
             y_embaixo = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -20  # Ajuste conforme necessário
             y_abaixo = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -9
         
-            assinante = ato.assinante2
 
             pdf.setFont(FONT_BOLD, tamanho_fonte)
 
@@ -376,14 +376,14 @@ class GerarPDFView(View):
             pdf.drawString(centralizar(largura_autoridade), y_autoridade, TEXTO_FUNCAO)
             
             DATE_MARGIN_X = 50
-            altura_texto_embaixo = pdf.stringWidth(ato.assinante2, FONT, 12)
+            altura_texto_embaixo = pdf.stringWidth(assinante, FONT, 12)
 
             y_outro = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -10
 
             data_objeto = datetime.strptime(data_str[:10], "%Y-%m-%d")
             data_br = data_objeto.strftime("%d-%m-%Y")
             
-            TEXT_ASSINATURA = "Assinado por: " + ato.assinante2
+            TEXT_ASSINATURA = "Assinado por: " + assinante
             TEXT_DATE = f"Data: {data_br}"
 
             DATA_POSITION_Y = y_outro - 10
@@ -426,6 +426,7 @@ def editar_ato(request, ato_id):
         ato.status = 'aprovado'
         ato.save()
         return redirect('main')
+    
     
     context = {'ato': ato, 'autoridades': autoridades}
     return render(request, 'editar_ato.html', context)
@@ -492,3 +493,41 @@ def boletins_salvos(request):
         else:
             b.conteudo_pdf = b.conteudo_pdf
     return render(request, 'boletins_salvos.html',  {'boletim': boletim})
+
+def get_oracle_users(request):
+    # Configurações de conexão com o banco de dados Oracle
+    db_settings = {
+        'USER': 'cons_oberon',
+        'PASSWORD': 'pwdconsoberon',
+        'HOST': '10.70.0.14',
+        'PORT': '1521',
+        'SERVICE_NAME': 'prouea2',
+    }
+
+    # Estabelece a conexão com o banco de dados Oracle
+    connection = cx_Oracle.connect(
+        f"{db_settings['USER']}/{db_settings['PASSWORD']}@{db_settings['HOST']}:{db_settings['PORT']}/{db_settings['SERVICE_NAME']}"
+    )
+
+    # Cria um cursor para executar consultas
+    cursor = connection.cursor()
+
+    try:
+        # Executa uma consulta para obter os nomes do campo USER_LDAP da tabela USUARIO no esquema OBERON
+        cursor.execute("SELECT USUARIO FROM OBERON.USUARIOPADACES")
+
+        # Recupera todos os registros retornados pela consulta
+        results = cursor.fetchall()
+
+        # Lista para armazenar os nomes de usuário
+        usernames = [row[0] for row in results]
+
+        # Renderiza o template 'edit.html' com os nomes de usuário
+        return render(request, 'edit.html', {'usernames': usernames})
+
+    finally:
+        # Fecha o cursor e a conexão com o banco de dados
+        cursor.close()
+        connection.close()
+        
+        
