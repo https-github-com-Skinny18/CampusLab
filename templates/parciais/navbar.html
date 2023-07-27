@@ -54,13 +54,22 @@
             </div>
         </div>
     </nav>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        $(document).ready(function () {
-            $('.nav-item').on('click', function (event) {
-                event.preventDefault(); // Cancela o comportamento padrão do link
-                $('.nav-item').removeClass('active');
-                $(this).addClass('active');
+        document.addEventListener('DOMContentLoaded', function () {
+            // Obtém o caminho da página atual
+            var currentPage = window.location.pathname;
+    
+            // Obtém todos os links da navbar
+            var navLinks = document.querySelectorAll('.nav-item a');
+    
+            // Itera sobre cada link na navbar
+            navLinks.forEach(function (link) {
+                var linkPath = link.getAttribute('href');
+    
+                // Verifica se o link corresponde à página atual
+                if (linkPath === currentPage) {
+                    link.classList.add('active'); // Adiciona a classe .active ao link correspondente
+                }
             });
         });
     </script>
