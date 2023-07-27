@@ -72,7 +72,7 @@ header .navbar {
 
 .nav-link.active {
     background-color: var(--corPrimaria);
-    color: #fbc531!important;
+    color: #ff8800!important;
 }
 
 header .navbar-toggler {
