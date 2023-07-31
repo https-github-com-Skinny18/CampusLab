@@ -399,6 +399,7 @@ class GerarPDFView(View):
 
         
 
+@login_required
 def editar_ato(request, ato_id):
     ato = get_object_or_404(AtoNormativ, pk=ato_id)
 
@@ -421,15 +422,15 @@ def editar_ato(request, ato_id):
         messages.success(request, 'Ato atualizado com sucesso.')
         return redirect('view', ato_id=ato.id)
 
-    autoridades = Autoridade.objects.all()
+    assinantes = Autoridade.objects.all()
     if request.POST.get('aprovar_ato'):
         ato.status = 'aprovado'
         ato.save()
         return redirect('main')
     
-    
-    context = {'ato': ato, 'autoridades': autoridades}
+    context = {'ato': ato, 'assinantes': assinantes}
     return render(request, 'editar_ato.html', context)
+
 
 def paginar(list, limit_per_page, request): 
     paginator = Paginator(list, limit_per_page) 

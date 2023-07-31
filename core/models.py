@@ -42,6 +42,7 @@ class Composicao (models.Model):
 
 class Autoridade(models.Model):
     nome = models.CharField(max_length=255)
+
     def __str__(self):
         return f"{self.nome}/{self.id}"
     
@@ -78,7 +79,7 @@ class AtoNormativ(models.Model):
     autoridade1 = models.CharField(max_length=45,null=False,default='setor', verbose_name='Autoridade 1')
     autoridade2 = models.CharField(max_length=45,null=True,default='setor', verbose_name='Autoridade 2')
     assinante1 = models.ForeignKey(Autoridade, on_delete=models.CASCADE, related_name='ato_normativ_assinante1', verbose_name='Assinante 1')
-    assinante2 = models.CharField(max_length=45,null=True, verbose_name='Assinante 2')
+    assinante2 = models.ForeignKey(Autoridade, on_delete=models.CASCADE,null=True, related_name='ato_normativ_assinante2', verbose_name='Assinante 2')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='revisao')
     # tipo_ato = models.ForeignKey(Composicao, on_delete=models.CASCADE, verbose_name='Tipo de Ato Normativo',
     #                           limit_choices_to={'tipo_ato__in': [('portaria', 'Portaria'), ('resolucao', 'Resolução'), ('boletim', 'Boletim')]}, default=None)
