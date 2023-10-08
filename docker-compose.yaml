@@ -1,0 +1,45 @@
+version: '3'
+services:
+  web:
+    build: .
+    container_name: django_app
+    ports:
+      - "9000:8000"
+    volumes:
+      - .:/app   
+    environment:
+      DJANGO_SETTINGS_MODULE: uea_news.settings  # Ajustado aqui
+    networks:
+      - django_network
+
+  # db:
+  #   image: postgres:13
+  #   container_name: postgres_db
+  #   environment:
+  #     POSTGRES_DB: meio
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: 250303
+  #   volumes:
+  #     - pg_data:/var/lib/postgresql/data
+  #   networks:
+  #     - django_network
+
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin_container
+  #   ports:
+  #     - "5050:80"
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: gcgabriel257@gmail.com
+  #     PGADMIN_DEFAULT_PASSWORD: 250303
+  #   networks:
+  #     - django_network
+      
+ 
+
+
+volumes:
+  pg_data:
+
+networks:
+  django_network:

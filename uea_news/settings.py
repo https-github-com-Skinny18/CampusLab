@@ -17,6 +17,8 @@ from django_auth_ldap.config import LDAPSearch
 
 
 import os
+os.environ["LD_LIBRARY_PATH"] = "/home/lury/opt/oracle/instantclient_21_10"
+os.environ["PATH"] = "/home/lury/opt/oracle/instantclient_21_10:" + os.environ.get("PATH", "")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -45,9 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
-    'autenticacao',
-    'bootstrap5',
-    'tinymce',
+    'autenticacao',   
 ]
 
 MIDDLEWARE = [
@@ -85,19 +85,30 @@ WSGI_APPLICATION = 'uea_news.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-     'default': {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': BASE_DIR / 'db.sqlite3',
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'meio',
-        'USER': 'postgres' ,
-        'PASSWORD': '24681632',
-        'HOST': 'localhost' ,
-        'PORT': '' ,
-        
-    }
- 
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        # 'NAME': 'lab',
+        # 'USER': 'postgres',
+        # 'PASSWORD': '24681632',
+        # 'HOST': 'localhost',
+        # 'PORT': '',
+    },
+
+    # 'prouea': {
+    #     'ENGINE': 'django.db.backends.oracle',
+    #     'NAME': 'prouea',
+    #     'USER': 'iury',
+    #     'PASSWORD': 'iury2023!',
+    #     'HOST': '10.70.0.14',
+    #     'PORT': '1521',
+    #     'OPTIONS': {
+    #         'threaded': True,
+    #     },
+    # },
 }
+
 # 'default': {0
 #         'ENGINE': 'django.db.backends.postgresql',
 #         'NAME': 'ueanews',
@@ -177,7 +188,8 @@ SESSION_COOKIE_AGE = 86400
 AUTHENTICATION_BACKENDS = [
     'django_auth_ldap.backend.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
-    # ...
+
+    'django.contrib.auth.backends.ModelBackend'
 ]
 
 AUTH_LDAP_SERVER_URI = "ldap://172.16.1.64"
@@ -200,4 +212,17 @@ MESSAGE_TAGS = {
     constants.SUCCESS: 'alert-success',
     constants.INFO: 'alert-info',
     constants.WARNING: 'alert-warning',
+}
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',  # Definindo o nível de log como DEBUG para exibir todas as mensagens
+    },
 }

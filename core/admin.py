@@ -1,28 +1,15 @@
 from django.contrib import admin
-
-# from .models import Composicao
-from .models import AtoNormativ
-from .models import Autoridade
-from .models import Composicao
-from .models import BoletimGerado
-
-# class AutoridadesAdmin(admin.ModelAdmin):
-#     list_display = ('id', 'nome')
-#     # list_display_links = ('id', 'nome')
-#     list_filter = ('nome')
-#     list_per_page = 10
-#     search_fields = ('nome')
+from .models import Laboratorio, Marca, Equipamento, Infraestrutura,LaboratorioInfraestrutura, RegimentoInterno
 
 class Atodmin(admin.ModelAdmin):
-    list_display = ('id', ' texto_normativo','ementa')
-    # list_display_links = ('id', 'nome')
-    list_filter = (' texto_normativo')
+    list_display = ('id', 'nome_laboratorio', 'bairro')
+    list_filter = ('nome_laboratorio',)  # Correção aqui, usando uma tupla
     list_per_page = 10
-    search_fields = (' texto_normativo')
-    
+    search_fields = ('nome_laboratorio',)  # Correção aqui, usando uma tupla
 
-admin.site.register(BoletimGerado)
-admin.site.register(AtoNormativ)
-admin.site.register(Autoridade)
-admin.site.register(Composicao)
-# admin.site.register(Composicao)
+admin.site.register(Laboratorio)
+admin.site.register(Infraestrutura)
+admin.site.register(Marca)
+admin.site.register(Equipamento)
+admin.site.register(LaboratorioInfraestrutura)
+admin.site.register(RegimentoInterno)

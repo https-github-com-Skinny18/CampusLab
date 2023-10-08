@@ -1,0 +1,12 @@
+<nav class="navbar navbar-expand-lg m-3 rounded">
+    <div class="nav-item d-none d-md-block">
+        <a href="{% if laboratorio.id %}{% url 'editar_laboratorio' laboratorio.id 0 %}{% endif %}" class="btn btn-sm btn-light m-2">Laboratório</a>
+        <a href="{% if laboratorio.id %}{% url 'editar_endereco' laboratorio.id %}{% endif %}" class="btn btn-sm btn-light m-2">Endereço</a>
+        <a href="{% if laboratorio.id %}{% url 'editar_infraestrutura' laboratorio.id %}{% endif %}" class="btn btn-sm btn-light m-2">Infraestrutura</a>
+        <a href="{% if laboratorio.id %}{% url 'visualizar_membros_laboratorio' laboratorio.id %}{% endif %}" class="btn btn-sm btn-light m-2">Membros do Laboratorio</a>
+        <a href="{% if laboratorio.id %}{% url 'editar_regimentos_internos' laboratorio.id %}{% endif %}" class="btn btn-sm btn-light m-2">Regimento Interno</a>
+        <a href="{% if laboratorio.id %}{% url 'editar_unidades_academicas' laboratorio.id %}{% endif %}" class="btn btn-sm btn-light m-2">Unidade Acadêmica</a>
+        <a href="{% if laboratorio.id %}{% url 'adicionar_grupo_de_pesquisa' laboratorio.id %}{% endif %}" class="btn btn-sm btn-light m-2">Grupo de Pesquisa</a>
+
+    </div>
+</nav>

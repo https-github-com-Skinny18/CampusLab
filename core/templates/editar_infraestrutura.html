@@ -1,0 +1,87 @@
+{% load static %}
+{% include 'parciais/head.html' %}
+<body>
+    {% include 'parciais/navbar.html' %}
+    <div class="container">
+        {% include 'parciais/ferramentas.html' %}
+        
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between">
+                    <h3>Informações de Infraestrutura</h3>
+                    <a href="{% url 'editar_laboratorio' laboratorio_id=laboratorio.id imagem_id=0 %}" class="ml-2 btn btn-primary">Editar Laboratório <i class="bi bi-pen"></i></a>
+                </div>
+            </div>
+            <div class="card-body">
+               
+    
+
+                {% if infraestruturas %}
+                <ul>
+                    {% for laboratorio_infraestrutura in infraestruturas %}
+                        <li>
+                            <p class="card-title">Equipamento: {{ laboratorio_infraestrutura.infraestrutura.equipamento.nome_equipamento|default_if_none:'' }}</p>
+                            <p class="card-title">Marca: {{ laboratorio_infraestrutura.infraestrutura.marca.nome_marca|default_if_none:'' }}</p>
+                            <p class="card-title">Modelo: {{ laboratorio_infraestrutura.infraestrutura.modelo|default_if_none:'' }}</p>
+                            <p class="card-title">Finalidade: {{ laboratorio_infraestrutura.infraestrutura.finalidade|default_if_none:'' }}</p>
+                
+                            <!-- Exiba todas as imagens da infraestrutura -->
+                            {% for imagem in laboratorio_infraestrutura.infraestrutura.imagens_infraestrutura.all %}
+                                <img src="{{ imagem.imagem.url }}" alt="{{ imagem.descricao }}" title="{{ imagem.titulo }}" width="100">
+                            {% endfor %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>Nenhuma infraestrutura encontrada para este laboratório.</p>
+                {% endif %}
+                
+                <!-- Adicione aqui outras informações relevantes da infraestrutura -->
+            </div>
+        </div>
+
+        <!-- Formulário para adicionar nova infraestrutura -->
+        <h2>Adicionar Nova Infraestrutura</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+        
+            <!-- Campos para adicionar nova infraestrutura -->
+            <div class="form-group">
+                <label for="novo_equipamento">Equipamento</label>
+                <select class="form-control" id="novo_equipamento" name="equipamento" required>
+                    <option value="">Escolha um equipamento</option>
+                    {% for equipamento in equipamentos %}
+                        <option value="{{ equipamento.id }}">{{ equipamento.nome_equipamento }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="nova_marca">Marca</label>
+                <select class="form-control" id="nova_marca" name="marca" required>
+                    <option value="">Escolha uma marca</option>
+                    {% for marca in marcas %}
+                        <option value="{{ marca.id }}">{{ marca.nome_marca }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for "novo_modelo">Modelo</label>
+                <input type="text" class="form-control" id="novo_modelo" name="modelo" required>
+            </div>
+            <div class="form-group">
+                <label for="nova_finalidade">Finalidade</label>
+                <input type="text" class="form-control" id="nova_finalidade" name="finalidade" required>
+            </div>
+        
+            <!-- Adicionar campo de imagem -->
+            <div class="form-group">
+                <label for="nova_imagem">Imagens da Infraestrutura</label>
+                <input type="file" class="form-control-file" id="nova_imagem" name="nova_imagem" multiple>
+            </div>
+        
+            <button type="submit" class="btn btn-primary mt-4" name="salvar_infraestrutura">Adicionar Infraestrutura</button>
+        </form>
+    </div>
+</body>
+</html>

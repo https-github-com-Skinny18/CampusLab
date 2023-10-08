@@ -1,0 +1,43 @@
+
+{% block content %}
+{% load static %}
+{% include 'parciais/head.html' %}
+<body>
+    {% include 'parciais/navbar.html' %}
+  <div class="container mt-4">
+    {% include 'parciais/ferramentas.html' %}
+    <h1 class="mb-4">Gerenciar Unidades Acadêmicas</h1>
+
+    {% if unidades_academicas %}
+      <h2>Unidade Acadêmica:</h2>
+      <ul class="list-group mb-4">
+        {% for unidade_academica in unidades_academicas %}
+          <li class="list-group-item">
+            <a href="{% url 'visualizar_pdf' unidade_academica.id %}" class="btn btn-sm btn-link" target="_blank">
+              <i class="fa fa-file-pdf-o"></i> Visualizar PDF
+          </a>
+            {{ unidade_academica }}
+            <form method="post" enctype="multipart/form-data" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="unidade_academica_id" value="{{ unidade_academica.id }}">
+              <input type="file" name="unidade_academica_pdf" accept=".pdf" class="form-control-file">
+              <button type="submit" class="btn btn-sm btn-primary mt-2">Substituir PDF</button>
+            </form>
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="unidade_academica_id" value="{{ unidade_academica.id }}">
+              <button type="submit" class="btn btn-sm btn-danger mt-2">Excluir PDF</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <h3>Adicionar Unidade Acadêmica:</h3>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="unidade_academica_pdf" accept=".pdf" class="form-control-file">
+        <button type="submit" class="btn btn-primary mt-2">Enviar Unidade Acadêmica</button>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

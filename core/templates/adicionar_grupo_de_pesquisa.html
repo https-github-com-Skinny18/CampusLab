@@ -1,0 +1,62 @@
+{% load static %}
+{% include 'parciais/head.html' %}
+<body>
+    {% include 'parciais/navbar.html' %}
+    <div class="container">
+      {% include 'parciais/ferramentas.html' %}
+      
+      
+      <div class="card mt-4">
+          <div class="card-header">
+              <div class="d-flex justify-content-between">
+                  <h3>Informações de Grupos de Pesquisa</h3>
+                  <a href="{% url 'editar_laboratorio' laboratorio_id=laboratorio.id imagem_id=0 %}" class="ml-2 btn btn-primary">Editar Laboratório <i class="bi bi-pen"></i></a>
+              </div>
+          </div>
+          <div class="card-body m-2">
+             
+  
+            <div>
+              {% if grupos_de_pesquisa %}
+              <ul>
+                  {% for grupo_de_pesquisa in grupos_de_pesquisa %}
+                      <li class="m-2">
+                          <p class="card-title">Nome do Grupo de Pesquisa: {{ grupo_de_pesquisa.nome_do_grupo }}</p>
+                          <p class="card-title">Área: {{ grupo_de_pesquisa.area }}</p>
+                          <p class="card-title">Link do Grupo de Pesquisa: <a href="{{ grupo_de_pesquisa.link_grupo }}" target="_blank">{{ grupo_de_pesquisa.link_grupo }}</a></p>
+                      </li>
+                  {% endfor %}
+              </ul>
+              {% else %}
+              <p>Nenhum grupo de pesquisa encontrado para este laboratório.</p>
+              {% endif %}
+              
+              <!-- Adicione aqui outras informações relevantes dos grupos de pesquisa -->
+          </div>
+      </div>
+
+        <!-- Formulário para adicionar novo grupo de pesquisa -->
+        <h2>Adicionar Novo Grupo de Pesquisa</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+        
+            <!-- Campos para adicionar novo grupo de pesquisa -->
+            <div class="form-group">
+                <label for="nome_do_grupo">Nome do Grupo de Pesquisa</label>
+                <input type="text" class="form-control" id="nome_do_grupo" name="nome_do_grupo" required>
+            </div>
+            <div class="form-group">
+                <label for="area">Área</label>
+                <input type="text" class="form-control" id="area" name="area" required>
+            </div>
+            <div class="form-group">
+                <label for "link_grupo">Link do Grupo de Pesquisa</label>
+                <input type="text" class="form-control" id="link_grupo" name="link_grupo" required>
+            </div>
+        
+            <!-- Botão para adicionar grupo de pesquisa -->
+            <button type="submit" class="btn btn-primary mt-4" name="salvar_grupo_de_pesquisa">Adicionar Grupo de Pesquisa</button>
+        </form>
+    </div>
+</body>
+</html>

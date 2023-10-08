@@ -1,104 +1,133 @@
 from django.db import models
-from tinymce.models import HTMLField
 from django.utils import timezone
-import datetime
-from django.utils.html import strip_tags
-import pytz
+import tempfile
 
-class Composicao (models.Model):
-    # composicao_id = models.AutoField(primary_key=True)
-    usario = models.CharField(max_length=80,verbose_name='Usuario')
-    sigla_setor = models.CharField(max_length=20,verbose_name='sigla do setor')
-    nome_setor = models.CharField(max_length=80,verbose_name= 'nome do setor')
-    tipo_ato = models.CharField(max_length=10, choices=[('portaria', 'Portaria'), ('resolucao', 'Resolução'), ('boletim', 'Boletim')], verbose_name='Tipo de Ato Normativo')
-    # portaria = models.CharField(max_length=1,verbose_name='caso seja uma portaria')
-    # resolucao = models.CharField(max_length=1,verbose_name='caso seja uma resolucao')
-    # boletim = models.CharField(max_length=1,verbose_name='caso seja uma boletim')
-    db_table = 'Composicao'
-        
-# class Usario (models.Model):
-#     usario = models.CharField(max_length=255,primary_key=True)
+
+
+class Marca(models.Model):
+    nome_marca=models.CharField(null=False,max_length=30, verbose_name='nome da marca do equipamento')
+
+class Equipamento(models.Model):
+    nome_equipamento= models.CharField(null=False,max_length=50, verbose_name='nome do equipamento')
+
+class RegimentoInterno(models.Model):
+    laboratorio = models.ForeignKey('Laboratorio', on_delete=models.CASCADE, related_name='regimentos_internos')
+    pdf = models.FileField(upload_to='pdf_regimentos_internos/')
+    nome_do_pdf = models.CharField(max_length=255, default="pedro")
     
-# class Emitente (models.Model):
-#     sigla = models.CharField(max_length=255)
-#     nome = models.CharField(max_length=255)
+    def __str__(self):
+        return f'Regimento Interno {self.id}'
 
-# class TipoLegislacao(models.Model):
-#      tipo = models.CharField(max_length=40, verbose_name='Tipo de ato')
-
-# class EmitenteTipoLeg(models.Model):
-#     tipolegislacao = models.ForeignKey(TipoLegislacao,on_delete=models.CASCADE)
-#     emitente = models.ForeignKey(Emitente,on_delete=models.CASCADE)
-
-#     class Meta:
-#         unique_together = ('tipolegislacao', 'emitente')
-    
-#     # class Meta:
-#     #     primary_key = ('tipolegislacao', 'emitente')
-#     #     verbose_name = 'Emitente-Tipo de Legislação'
-#     #     verbose_name_plural = 'Emitentes-Tipos de Legislação'
-#     #     unique_together = ('tipolegislacao', 'emitente')
-
-
-class Autoridade(models.Model):
-    nome = models.CharField(max_length=255)
+class UnidadeAcademica(models.Model):
+    laboratorio = models.ForeignKey('Laboratorio', on_delete=models.CASCADE, related_name='unidades_academicas_do_laboratorio')
+    pdf = models.FileField(upload_to='pdf_unidades_academicas/', null=True, blank=True)
 
     def __str__(self):
-        return f"{self.nome}/{self.id}"
-    
-class AtoNormativ(models.Model):
-    STATUS_CHOICES=[
-        ('revisao', 'Revisão'),
-        ('aprovado', 'Aprovado'),
-        ('pendente', 'Pendente'),
-        ('cancelado', 'Cancelado'),
-    ]
+        return f"Unidade Acadêmica para {self.laboratorio}"
+    db_table = 'laboratorio'
 
-    ATO_CHOICES=[
-        ('portaria', 'Portaria'),
-        ('resolucao', 'Resolucao'),
-    ]
-    data = models.DateTimeField(default=timezone.datetime(2000, 10, 10, tzinfo=pytz.timezone('America/Manaus')), verbose_name='Data de criação')
-    numero = models.PositiveIntegerField(null=False,unique=True, verbose_name='Número')
-    # nao esquecer de que chave era unica abaixo
-    ano = models.PositiveIntegerField(null=False, verbose_name='Ano')  
-    doe_data = models.DateTimeField(auto_now_add=True, verbose_name='Data do Diário Oficial')
-    doe_numero = models.PositiveIntegerField(null=True,verbose_name='Número do Diário Oficial')
-    doe_numero_boletim = models.PositiveIntegerField(null=True,verbose_name='Número do Diário Oficial')
-    doe_secao = models.CharField(max_length=40, verbose_name='Seção do Diário Oficial')
-    doe_pagina = models.CharField(max_length=40, verbose_name='Página do Diário Oficial')
-    dt_cadastro = models.DateTimeField(null=False,default=timezone.datetime(2000, 10, 10, tzinfo=pytz.timezone('America/Manaus')),verbose_name='Data de cadastro')
-    usr_cadastro = models.CharField(null=False,default='enzo', max_length=40, verbose_name='Usuário de cadastro')
-    ementa = models.TextField(max_length=400, verbose_name='Ementa')
-    texto_normativo = models.TextField(null=False, default='escrever',max_length=1000, verbose_name='Texto normativo')
-    publicado = models.CharField(null=False, default='n',max_length=1, verbose_name='Publicado')
-    dt_alteracao= models.DateField(auto_now=True, verbose_name='Data de alteração')
-    usr_alteracao = models.CharField(max_length=20, verbose_name='Usuário de alteração')
-    dt_publicado = models.DateField(null=True, blank=True, verbose_name='Data de publicação')
-    usr_publicacao = models.CharField(max_length=45, verbose_name='Usuário de publicação')
-    autoridade1 = models.CharField(max_length=45,null=False,default='setor', verbose_name='Autoridade 1')
-    autoridade2 = models.CharField(max_length=45,null=True,default='setor', verbose_name='Autoridade 2')
-    assinante1 = models.ForeignKey(Autoridade, on_delete=models.CASCADE, related_name='ato_normativ_assinante1', verbose_name='Assinante 1')
-    assinante2 = models.ForeignKey(Autoridade, on_delete=models.CASCADE,null=True, related_name='ato_normativ_assinante2', verbose_name='Assinante 2')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='revisao')
-    # tipo_ato = models.ForeignKey(Composicao, on_delete=models.CASCADE, verbose_name='Tipo de Ato Normativo',
-    #                           limit_choices_to={'tipo_ato__in': [('portaria', 'Portaria'), ('resolucao', 'Resolução'), ('boletim', 'Boletim')]}, default=None)
-    tipo_ato = models.CharField(max_length=45, null=True, verbose_name='ato')
-    db_table = 'AtoNormativ'
+class ImagemLaboratorio(models.Model):
+    imagem = models.ImageField(upload_to='imagens_laboratorio/', null=True, verbose_name='Imagem do Laboratório')
+    laboratorios = models.ManyToManyField('Laboratorio', blank=True, related_name='imagens_lab')
+    data_upload = models.DateTimeField(default=timezone.now)  # Defina um valor padrão aqui
+    def __str__(self):
+        return f'Imagem {self.id}'
 
     def __str__(self):
-        return f"{self.texto_normativo}/{self.ementa}"
+        return f'Imagem {self.id}'
     
-
-class BoletimGerado(models.Model):
-    portarias_fks = models.CharField(max_length=1000, default='')
-    titulo = models.CharField(max_length=100)
-    conteudo_pdf = models.CharField(max_length=100000, default='')
-    data_criacao = models.DateTimeField(auto_now_add=True)
+class GrupoDePesquisa(models.Model):
+    nome_do_grupo = models.CharField(max_length=50,null=True, verbose_name='Nome do grupo de pesquisa')
+    area = models.CharField(max_length=50, null=True, verbose_name='Área de atuação')
+    link_grupo = models.URLField(verbose_name='Link do grupo de pesquisa', blank=True, null=True)
 
     def __str__(self):
-        return self.titulo
+        return self.nome_do_grupo
+
+class Laboratorio(models.Model):
+
+    nome_laboratorio = models.CharField(max_length=80, null=False, verbose_name="nome do laboratorio")
+    responsavel = models.CharField(null=False,max_length=40,default="jose carlos", verbose_name='Usuário de cadastro')
+    email = models.EmailField(verbose_name='email', null=False,default="meu_email@example.com")
+    telefone = models.CharField(max_length=15,default="9299999",null=False,verbose_name='numero de telefone')
+    unidade = models.CharField(null=True,max_length=10, verbose_name='unidade academica' , default="meu_email")
+    rua = models.CharField(null=True, max_length=50,verbose_name='nome da rua do laboratorio' , default="meu_email@example.com")
+    numero_rua = models.PositiveIntegerField(null=True,default="32232",verbose_name='numero da rua do laboratorio')
+    cep = models.PositiveIntegerField(null=True,default="33323",verbose_name='cep do bairro do laboratorio')
+    bairro= models.CharField(null=True, max_length=50,default="jose carlos", verbose_name='nome do bairro do laboratorio')
+    andar = models.PositiveIntegerField(null=True, verbose_name='andar do laboratorio')
+    sala = models.CharField(null=True, max_length=10, verbose_name='sala do laboratorio')
+    apresentacao= models.TextField(null=True,max_length=400,default="jose carlos", verbose_name='Apresentação geral do laboratório:')
+    objetivos = models.TextField(null=True,max_length=400, default="jose carlos",verbose_name='Objetivos do laboratório:')
+    descricao = models.TextField(null=True, max_length=400, default="ou", verbose_name='descricao das atividades de pesquisa e ensino:')
+
+    link_pnipe = models.CharField(null=True,default="ou",max_length=50, verbose_name='link do pnipe')
+    ato_anexo = models.BinaryField(null=True, verbose_name='Anexo do Ato', blank=True)
+    unidades_academicas = models.ManyToManyField(UnidadeAcademica, related_name='laboratorios', blank=True)
+    imagens = models.ManyToManyField(ImagemLaboratorio, related_name='laboratorios_lab', blank=True)
+    grupos_de_pesquisa = models.ManyToManyField(GrupoDePesquisa, related_name='laboratorios', blank=True)
+
+
+class MembroLaboratorio(models.Model):
+
+    nome_membro = models.CharField(max_length=80, null=True, verbose_name="nome do membro")
+    funcao = models.CharField(max_length=40, null=True, verbose_name="função")
+    curriculo_lattes = models.URLField(null=True, verbose_name="currículo Lattes")
+    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, related_name="membros")
+
+    def __str__(self):
+        return self.nome_membro
+
+
+class Infraestrutura(models.Model):
+    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, null=True, default=None)
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.CASCADE, null=True, related_name='infraestrutura_equipamento', verbose_name='Nome do Equipamento lista')
+    marca = models.ForeignKey(Marca, on_delete=models.CASCADE, null=True, related_name='infraestrutura_marca', verbose_name='Nome da Marca lista')
+    modelo = models.CharField(null=True, max_length=30, verbose_name='modelo do equipamento')
+    finalidade = models.CharField(null=True, max_length=300, verbose_name='finalidade do equipamento')
+
+class ImagemInfraestrutura(models.Model):
+    imagem = models.ImageField(upload_to='infraestrutura_images/', null=True, blank=True, verbose_name='Imagem da Infraestrutura')
+    infraestrutura = models.ForeignKey(Infraestrutura, on_delete=models.CASCADE, related_name='imagens_infraestrutura', verbose_name='Infraestrutura')
+
+    def __str__(self):
+        return f'Imagem da Infraestrutura #{self.id}'
+    def __str__(self):
+        return f"Infraestrutura #{self.id}"
+    
 
     
-     
+
+
+class LaboratorioInfraestrutura(models.Model):
+    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, related_name='infraestruturas')
+    infraestrutura = models.ForeignKey(Infraestrutura, on_delete=models.CASCADE)
+
+
+
    
+
+
+    
+# class Grupo(models.Model):
+#    nome_do_grupo = models.CharField(null=True,max_length=50, verbose_name='Nome do grupo de pesquisa')
+#    area = models.CharField(null=False,max_length=50, verbose_name='area de atuacao')
+#    ano_de_criacao = models.DateField(null=True, verbose_name='Data de criação do grupo de pesquisa')
+
+ 
+# class Projeto(models.Model):
+#     nome_do_projeto= models.CharField(null=False,max_length=50, verbose_name='nome do projeto')
+#     responsavel_projeto= models.CharField(null=False,max_length=50, verbose_name='responsavel pelo projeto')
+#     nome_discente=models.CharField(null=False,max_length=50, verbose_name='aluno no projeto')
+#     matricula_discente=models.PositiveIntegerField(null=False,verbose_name='numero da matricula do aluno')
+#     modalidade=models.CharField(null=False,max_length=50, verbose_name='modalidades da pesquisa')
+#     inicio_projeto= models.DateField(null=True, verbose_name='Data de inicio do projeto ')
+#     fim_projeto=models.DateField(null=True, verbose_name='Data do fim do projeto')
+#     formento= models.CharField(null=False,max_length=50, verbose_name='apoio ao projeto')
+
+class Unidade(models.Model):
+    Unidade = models.CharField(max_length=100)  # Adicione este campo para armazenar o setor do usuário
+
+    class Meta:
+        managed = False
+        db_table = 'XPROJ2.UNIDADE'

@@ -1,0 +1,13 @@
+def visualizar_pdf(request, regimento_id):
+    regimento = RegimentoInterno.objects.get(id=regimento_id)
+    
+    try:
+        if regimento:
+            response = HttpResponse(regimento.pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{regimento.nome_do_pdf}"'
+            return response
+    except RegimentoInterno.DoesNotExist:
+        pass
+
+    print("PDF não encontrado") 
+    return HttpResponse("PDF não encontrado.", status=404)

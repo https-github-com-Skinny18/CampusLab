@@ -1,42 +1,61 @@
 {% load static %}
-
 {% include 'parciais/head.html' %}
 
 <body>
-    {% include 'parciais/navbar.html'%}
-    <div class="container">
-        <div class="card mt-4">
+   {% include 'parciais/navbar.html'%}
+   <div class="container">
+      <div class="card mt-4">
 
-            <div class="card-header bg-default">
+         <div class="card-header">
+            <div class="d-flex justify-content-between">
+               <h3>Informações do Laboratorio</h3>
 
-                <div class="d-flex justify-content-between ">
-                    <h3 class="card-title">{{ ato.tipo_ato|upper }} / NUMERO {{ ato.numero }}</h3>
-                    
-                    <div class="d-flex gap-3  ">
-                        <a href="{% url 'editar_ato' ato_id=ato.id %}" target="_blank" class="bg-light p-2 text-reset rounded ">
-                            <i class="bi bi-pencil-square fa-2x"></i>
-                        </a>
-
-                        <a href="{% url 'gerar_pdf' ato_ids=ato.id boletim_id=ato.id %}" target="_blank" class="bg-light p-2 text-reset  rounded  ">
-                            <i class="bi bi-download fa-2x"></i>
-                        </a>
-                    </div>
-                </div>
+               <a href="{% url 'editar_laboratorio' laboratorio_id=laboratorio.id imagem_id=0 %}"
+                  class="ml-2 btn btn-primary">Editar Laboratório <i class="bi bi-pen"></i></a>
             </div>
+         </div>
 
-            <div class="card-body">
-                <div class="tab-content bg-red-500">
-                    <p class="card-title ">Assinatura: {{ ato.assinante1 }}</p>
-                    <p class="card-title">Autoridade: {{ ato.autoridade1 }}</p>
-                    <p class="card-title">Data de publicação: {{ ato.dt_publicado }}</p>
-                    <p class="card-title">Ementa:{{ ato.ementa }}</p>
-                    <p class="text-justify"> Texto Normativo:{{ ato.texto_normativo|safe }}</p>
+         <div class=" bg-default">
+            <!-- Aqui você pode adicionar os links para edição ou download, se necessário -->
+         </div>
+         <div class="card-body">
+            <div class="tab-content bg-red-500">
 
-                </div>
+
+               <p class="card-title">Nome do Laboratório: {{ laboratorio.nome_laboratorio|default_if_none:'' }}</p>
+               <p class="card-title">Responsável: {{ laboratorio.responsavel|default_if_none:'' }}</p>
+               <p class="card-title">Email: {{ laboratorio.email|default_if_none:'' }}</p>
+               <p class="card-title">Link do Pnipe: <a href=" {{ laboratorio.link_pnipe|default_if_none:'' }}"target="_blank">{{ laboratorio.link_pnipe|default_if_none:'' }}</a></p>  </a>  
+               <p class="card-title">Telefone: {{ laboratorio.telefone|default_if_none:'' }}</p>
+               <p class="card-title">Bairro: {{ laboratorio.bairro|default_if_none:'' }}</p>
+
+              <!-- Adicione aqui outras informações relevantes do laboratório -->
+              <h3>Informações de Infraestrutura</h3>
+
+              {% if infraestruturas %}
+                <ul>
+                  {% for laboratorio_infraestrutura in infraestruturas %}
+                    <li>
+                      <p class="card-title">Equipamento: {{ laboratorio_infraestrutura.infraestrutura.equipamento.nome_equipamento|default_if_none:'' }}</p>
+                      <p class="card-title">Marca: {{ laboratorio_infraestrutura.infraestrutura.marca.nome_marca|default_if_none:'' }}</p>
+                      <p class="card-title">Modelo: {{ laboratorio_infraestrutura.infraestrutura.modelo|default_if_none:'' }}</p>
+                      <p class="card-title">Finalidade: {{ laboratorio_infraestrutura.infraestrutura.finalidade|default_if_none:'' }}</p>
+                      
+                      <!-- Exiba as imagens associadas à infraestrutura, se existirem -->
+                      {% for imagem in laboratorio_infraestrutura.infraestrutura.imagens_infraestrutura.all %}
+                        <img src="{{ imagem.imagem.url }}" alt="Imagem da Infraestrutura" width="100">
+                      {% endfor %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p>Nenhuma infraestrutura encontrada para este laboratório.</p>
+              {% endif %}
+
+               <!-- Adicione aqui outras informações relevantes da infraestrutura -->
             </div>
-
-        </div>
-    </div>
-    {% include 'parciais/footer.html'%}
-
+         </div>
+      </div>
+   </div>
+   {% include 'parciais/footer.html'%}
 </body>

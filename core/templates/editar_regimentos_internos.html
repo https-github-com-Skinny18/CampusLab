@@ -1,0 +1,42 @@
+{% block content %}
+{% load static %}
+{% include 'parciais/head.html' %}
+<body>
+    {% include 'parciais/navbar.html' %}
+
+  <div class="container">
+    {% include 'parciais/ferramentas.html' %}
+    <h1 class="mb-4">Gerenciar Regimentos Internos</h1>
+
+    <h2>Regimento Interno:</h2>
+    <ul class="list-group mb-4">
+      {% for regimento in regimentos_internos %}
+      <li class="list-group-item">
+        <a href="{% url 'visualizar_regimento_interno' regimento_id=regimento.id %}" class="btn btn-sm btn-link" target="_blank">
+          <i class="fa fa-file-pdf-o"></i> Visualizar PDF
+      </a>
+        {{ regimento }}
+        <form method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="regimento_id" value="{{ regimento.id }}">
+            <button type="submit" class="btn btn-sm btn-danger mt-2" onclick="return confirm('Deseja realmente excluir este regimento interno?')">Excluir</button>
+        </form>
+    </li>
+  {% endfor %}
+    </ul>
+
+    <h3>Adicionar Regimento Interno:</h3>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="regimento_pdf" accept=".pdf" class="form-control-file">
+      <br>
+      <button type="submit" class="btn btn-primary mt-2">Enviar Regimento Interno</button>
+    </form>
+
+    {% if message_success %}
+      <div class="alert alert-success mt-4" role="alert">
+        {{ message_success }}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

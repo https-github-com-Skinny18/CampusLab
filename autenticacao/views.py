@@ -30,7 +30,7 @@ def autenticacao(request):
             django_user.backend = 'django_auth_ldap.backend.LDAPBackend'
             login(request, django_user, backend='django_auth_ldap.backend.LDAPBackend')
 
-            return redirect('aprovados')  # Redireciona para a página de 'aprovados' após o login
+            return redirect('main')  # Redireciona para a página de 'aprovados' após o login
 
         else:
             # Autenticação falhou

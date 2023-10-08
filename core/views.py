@@ -1,435 +1,407 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect, HttpResponseRedirect
+from django.urls import reverse
+
 from django.utils.html import strip_tags
 from django.contrib import messages
-from django.contrib.messages import constants
-from io import BytesIO
-from django.http import FileResponse
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4 
-from django.contrib import messages
-from reportlab.lib.units import mm
-from reportlab.pdfgen import canvas
-from django.http import HttpResponse
-from django.views.generic.edit import UpdateView
-from core.models import AtoNormativ
-from django.core.paginator import Paginator
-from django.views import View
 from django.contrib.auth.decorators import login_required
-from reportlab.lib.pagesizes import letter
-from .models import AtoNormativ, Autoridade
-from django.contrib.auth import logout
-from reportlab.lib.pagesizes import letter
+from .models import Laboratorio, Infraestrutura,LaboratorioInfraestrutura,ImagemLaboratorio, Marca, Equipamento, RegimentoInterno, UnidadeAcademica,ImagemInfraestrutura,GrupoDePesquisa,MembroLaboratorio
+from django.contrib.messages import constants
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.core.exceptions import ObjectDoesNotExist
+from PIL import Image
 from datetime import datetime
-from reportlab.lib import colors
-from core.Portaria import Portaria
-from core.Boletim import Boletim
-from django.db.models import Q
-from .models import BoletimGerado
+import io
+import base64
+from django.core.files.base import ContentFile
+import logging
+from django.templatetags.static import static
+from django.core.exceptions import ValidationError
+from django.http import FileResponse
+from django.core.files import File
+from .Send import Email
+from .planilha import export_to_excel
+
+import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+from django.http import HttpResponse
+import pandas as pd
+from openpyxl.styles import PatternFill
+from .models import Unidade, Laboratorio, Equipamento, RegimentoInterno  # Adicione outros modelos conforme necessário
+
+
+def visualizar_pdf(request, unidade_academica_id):
+    try:
+        unidade_academica = UnidadeAcademica.objects.get(id=unidade_academica_id)
+        
+        if unidade_academica and unidade_academica.pdf:
+            pdf_file = unidade_academica.pdf
+            response = FileResponse(pdf_file, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{pdf_file.name}"'
+            return response
+    except UnidadeAcademica.DoesNotExist:
+        pass
+
+    return HttpResponse("PDF não encontradoooo.", status=404)
+
+def visualizar_regimento_interno(request, regimento_id):
+    try:
+        regimento = RegimentoInterno.objects.get(id=regimento_id)
+
+        if regimento and regimento.pdf:
+            pdf_file = regimento.pdf
+            response = FileResponse(pdf_file, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{pdf_file.name}"'
+            return response
+    except RegimentoInterno.DoesNotExist:
+        pass
+
+    return HttpResponse("Regimento Interno não encontrado.", status=404)
+
+def editar_regimentos_internos(request, laboratorio_id):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+    regimentos_internos = RegimentoInterno.objects.filter(laboratorio=laboratorio)
+
+    if request.method == 'POST':
+        regimento_pdf = request.FILES.get('regimento_pdf')
+        
+        if regimento_pdf:
+            regimento_interno = RegimentoInterno(
+                laboratorio=laboratorio,
+                pdf=regimento_pdf
+            )
+            regimento_interno.save()
+            return redirect('editar_regimentos_internos', laboratorio_id=laboratorio_id)
+
+    return render(request, 'editar_regimentos_internos.html', {
+        'laboratorio': laboratorio,
+        'regimentos_internos': regimentos_internos,
+    })
+
+def editar_unidades_academicas(request, laboratorio_id):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+    unidades_academicas = UnidadeAcademica.objects.filter(laboratorio=laboratorio)
+
+    if request.method == 'POST':
+        # Lógica para processar o envio da Unidade Acadêmica aqui, se necessário
+        unidade_academica_pdf = request.FILES.get('unidade_academica_pdf')
+        if unidade_academica_pdf:
+            UnidadeAcademica.objects.create(laboratorio=laboratorio, pdf=unidade_academica_pdf)
+
+    return render(request, 'editar_unidades_academicas.html', {
+        'laboratorio': laboratorio,
+        'unidades_academicas': unidades_academicas,
+    })
+
+
+def visualizar_laboratorio(request, laboratorio_id):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+
+    # Recupere todas as infraestruturas associadas a este laboratório
+    infraestruturas = LaboratorioInfraestrutura.objects.filter(laboratorio=laboratorio)
+
+    return render(request, 'view.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas})
+
 
 def index(request):
     return render(request, 'index.html')
 
-def view(request, ato_id):
-    ato = get_object_or_404(AtoNormativ, pk=ato_id)
-    context = {'ato': ato}
-    return render(request, 'view.html', context)
-
-# def authetication(request):
-#     return render(request, 'authentication.html')
-def salvar_boletim(request, ato_ids):
-        
-        ato_ids_list = [int(id) for id in ato_ids.split(',')]
-
-        
-            # Criar o boletim combinando os atos selecionados
-        atos_selecionados = []
-        for ato_id in ato_ids_list:
-            ato = get_object_or_404(AtoNormativ, id=ato_id)
-            atos_selecionados.append(ato)
-        ids_serializados = ','.join(str(id) for id in ato_ids_list)
-        print(ids_serializados)
-        # Salvar o PDF gerado no banco de dados
-        boletim = BoletimGerado.objects.create(
-            portarias_fks=ids_serializados,
-            titulo=f"Boletim - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            conteudo_pdf=atos_selecionados,
-        )
-        {"boletim_id": boletim.id}
-        print(boletim.id)
-        messages.add_message(request, constants.SUCCESS, 'Boletim salvo com sucesso.')
-        return redirect('boletins_salvos')
-
-@login_required
+# @login_required
 def edit(request):
-    # View para exibir a página de edição
-    
-    # composicoes = Composicao.objects.all()
-    atonormativs = AtoNormativ.objects.all()
-    autoridades = Autoridade.objects.all()
-    
-    # tipo_atos = Composicao.objects.values_list('tipo_ato', flat=True).distinct()
-    
+   
+    laboratorios = Laboratorio.objects.all()
+    marcas = Marca.objects.all()
+    equipamentos = Equipamento.objects.all()
+
     return render(request, 'edit.html', {
-        # 'composicoes' : composicoes,
-        'atonormativs': atonormativs,
-        'autoridades' : autoridades,
-        # 'tipo_atos': tipo_atos,
+        'laboratorios': laboratorios,
+        'marcas': marcas,
+        'equipamentos': equipamentos,
     })
 
+def imagem_rgb(request, imagem_id):
+    try:
+        imagem = ImagemLaboratorio.objects.get(pk=imagem_id)
+        imagem_bin = imagem.imagem
 
-def salvar_ato(request):
-
-    if request.method != "POST":
-        return render(request, 'edit.html')
-
-    elif request.method == "POST":
+        response = HttpResponse(content_type="image/jpeg")
+        image = Image.open(io.BytesIO(imagem_bin))
         
-        textoNormativo = request.POST.get("textoNormativo")
-        textoEmenta = request.POST.get("textoEmenta")
-        nomeAutoridadeAssinantePrimaria = request.POST.get("nomeAutoridadeAssinantePrimaria")
-        nomeAutoridadeAssinanteSecundaria = request.POST.get("nomeAutoridadeAssinanteSecundaria")
-        tipoAto = request.POST.get("tipoAto")
-        anoDePublicacao = request.POST.get("anoDePublicacao")
-        numeroAto = request.POST.get("numeroAto")
-        paginaDOE = request.POST.get("paginaDOE")
-        secaoDOE = request.POST.get("secaoDOE")
-        numeroDOE = request.POST.get("numeroDOE")
-        cargoDaAutoridadePrimaria = request.POST.get("cargoDaAutoridadePrimaria")
-        cargoDaAutoridadeSecundaria = request.POST.get("cargoDaAutoridadeSecundaria")
-        textoNormativoSantinizado = strip_tags(textoNormativo)
-        textoEmentaSanitizado = strip_tags(textoEmenta)
+        # Redimensionar a imagem para o tamanho desejado (600x900)
+        # new_size = (600, 900)
+        # image = image.resize(new_size, Image.ANTIALIAS)
+        
+        image = image.convert("RGB")
+        image.save(response, format="JPEG")
 
+        return response
+    except ImagemLaboratorio.DoesNotExist:
+        return HttpResponse("Imagem não encontrada.", status=404)
+
+    
+    
+from django.db.models import Max
+
+def main(request):
+    laboratorios = Laboratorio.objects.annotate(max_imagem=Max('imagens__data_upload')).all()
+
+    lab = Laboratorio.objects.all()
+
+    context = {
+        'lab': lab,
+        'laboratorios': laboratorios,
+    }
+
+    print("DEBUG: Laboratórios:", laboratorios)
+
+    return render(request, 'main.html', context)
+
+def salvar_laboratorio(request):
+    if request.method == "POST":
         try:
-            nomeAutoridadeAssinantePrimaria = Autoridade.objects.get(id=nomeAutoridadeAssinantePrimaria)
-            nomeAutoridadeAssinanteSecundaria = Autoridade.objects.get(id=nomeAutoridadeAssinanteSecundaria)
+            imagens_lab = request.FILES.getlist("imagens_lab[]")
+            imagens_salvas = []
+
+            for imagem in imagens_lab:
+                imagem_laboratorio = ImagemLaboratorio(imagem=imagem)
+                imagem_laboratorio.save()
+                imagens_salvas.append(imagem_laboratorio)
+            
+            # if not imagens_lab:
+            #         # Caminho para a imagem padrão (ajuste o caminho conforme necessário)
+            #     caminho_imagem_padrao = '/uea-news/templates/static/images/generica.png'
+                    
+            #     with open(caminho_imagem_padrao, 'rb') as img_padrao:
+            #             # Crie uma instância de ImagemLaboratorio com a imagem padrão
+            #          imagem_laboratorio = ImagemLaboratorio(imagem=File(img_padrao))
+            #          imagem_laboratorio.save()
+                        
+            #             # Adicione a imagem padrão à lista de imagens
+            #          imagens_salvas.append(imagem_laboratorio)
+
+            nome_laboratorio = request.POST.get("nome_laboratorio")
+            responsavel = request.POST.get("responsavel")
+            email = request.POST.get("email")
+            telefone = request.POST.get("telefone")
+            unidade = request.POST.get("unidade")
+            rua = request.POST.get("rua")
+            numero_rua = request.POST.get("numero_rua")
+            cep = request.POST.get("cep")
+            bairro = request.POST.get("bairro")
+           
+            ato_anexo = request.FILES.get("ato_anexo")
+            ato_anexo_content = ato_anexo.read() if ato_anexo else None
+            apresentacao = request.POST.get("apresentacao")
+            objetivos = request.POST.get("objetivos")
+
+            apresentacao = apresentacao if apresentacao else None
+            objetivos = objetivos if objetivos else None
+            
+            descricao = request.POST.get("descricao")
+            link_pnipe = request.POST.get("link_pnipe")
+
+            andar = request.POST.get("andar")
+            sala = request.POST.get("sala")
+
+            andar = andar if andar else None
+            sala = sala if sala else None
+
+
+            unidade = unidade if unidade else None
+            bairro =  bairro if bairro else None
+            rua = rua if rua else None
+            numero_rua = numero_rua if numero_rua else None
+            cep = cep if cep else None
+            apresentacao = apresentacao if apresentacao else None
+            objetivos = objetivos if objetivos else None
+            descricao = descricao if descricao else None
+            link_pnipe = link_pnipe if link_pnipe else None
+
+
+            equipamento_id = request.POST.get('equipamento')  # Troquei 'equipamento_id' por 'equipamento'
+            marca_id = request.POST.get('marca')  # Troquei 'marca_id' por 'marca'
+            modelo = request.POST.get('modelo')
+            finalidade = request.POST.get('finalidade')
+
+            # Email(email, nome_laboratorio, responsavel)
+            # export_to_excel(request=request)
+            try:
+                equipamento = Equipamento.objects.get(id=equipamento_id)
+            except Equipamento.DoesNotExist:
+                equipamento = None
+            try:
+                marca = Marca.objects.get(id=marca_id)
+            except Marca.DoesNotExist:
+                marca = None
+
+            equipamento = equipamento if equipamento else None
+            marca = marca if marca else None
+            modelo = modelo if modelo else None
+            finalidade = finalidade if finalidade else None
 
             # Salvar os dados no banco de dados
-            AtoNormativ.objects.create(
-                texto_normativo=textoNormativoSantinizado,
-                ementa=textoEmentaSanitizado,
-                ano=anoDePublicacao,
-                numero=numeroAto,
-                doe_pagina=paginaDOE,
-                doe_secao=secaoDOE,
-                doe_numero=numeroDOE,
-                assinante1=nomeAutoridadeAssinantePrimaria,
-                assinante2=nomeAutoridadeAssinanteSecundaria,
-                autoridade1=cargoDaAutoridadePrimaria,
-                autoridade2=cargoDaAutoridadeSecundaria,
-                tipo_ato=tipoAto,
-                status='revisao',
+            laboratorio = Laboratorio.objects.create(
+                nome_laboratorio=nome_laboratorio,
+                responsavel=responsavel,
+                email=email,
+                telefone=telefone,
+                unidade=unidade,
+                rua=rua,
+                ato_anexo=ato_anexo_content,
+                numero_rua=numero_rua,
+                cep=cep,
+                bairro=bairro,
+                
+                apresentacao=apresentacao,
+                objetivos=objetivos,
+                descricao=descricao,
+                link_pnipe=link_pnipe,
+            )
+            pdf_unidade_academica = request.FILES.get("pdf_unidade_academica")
+            if pdf_unidade_academica:
+                # Certifique-se de que o arquivo seja um PDF (você pode adicionar validações adicionais)
+                if not pdf_unidade_academica.name.endswith('.pdf'):
+                    raise ValidationError("O arquivo deve ser um PDF.")
+                
+                # Crie uma instância de UnidadeAcademica e associe-a ao laboratório
+                unidade_academica = UnidadeAcademica(laboratorio=laboratorio, pdf=pdf_unidade_academica)
+                unidade_academica.save()
+         # Salvar as imagens no banco de dados (caso você tenha um modelo separado para imagens)
+            infraestrutura = Infraestrutura.objects.create(
+            equipamento=equipamento,
+            marca=marca,
+            modelo=modelo,
+            finalidade=finalidade,
             )
             
-            messages.add_message(request, constants.SUCCESS, 'Salvo com sucesso.')
-            return render(request, 'edit.html')
-        
-        except:
-            messages.add_message(request, constants.WARNING, 'O sistema apresenta falhas internas.')
+            laboratorio.infraestrutura = infraestrutura
+            laboratorio.save()
+
+            
+            # Relacionar as imagens ao laboratório
+            laboratorio.imagens.set(imagens_salvas)
+
+            if imagens_salvas:
+                return HttpResponseRedirect(reverse('editar_laboratorio', args=[laboratorio.id, imagens_salvas[0].id]))
+            else:
+                # Lida com o caso em que não há imagens salvas
+                caminho_imagem_padrao = static('images/download.jpeg')  # Ajuste o caminho aqui
+                messages.add_message(request, messages.WARNING, 'Nenhuma imagem foi salva.')
+
+                return HttpResponseRedirect(reverse('editar_laboratorio', args=[laboratorio.id, 0]))  # Defina 0 como o ID da imagem padrão
+
+        except Exception as e:
+            print('Erro:', str(e))
+            print('Erro ao salvar')
+            messages.add_message(request, messages.WARNING, 'O sistema apresenta falhas internas.')
             return redirect('../edit/')
-
-def mm2p(milimetros):
-    return milimetros / 0.352777
-
-def mm2p(mm_value):
-    return mm_value * 2.83465
-
-class GerarPDFView(View):
-
-    def get(self, request, ato_ids, boletim_id):
-
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="documento.pdf"'
-        packet = BytesIO()
-         
-        if isinstance(ato_ids, str) and ',' in ato_ids:
-            
-            boletim = Boletim()         
-            pdf = canvas.Canvas(packet)
-            ato_ids_list = [int(id) for id in ato_ids.split(',')]
-            atos = []
-            for i in ato_ids_list:
-                atos.append(get_object_or_404(AtoNormativ, id=i))
-            boletins = get_object_or_404(BoletimGerado, id=boletim_id)
-            print(boletins.id)
-            boletim_path = '/home/lury/Área de Trabalho/projeto/uea-news/templates/static/images/boletim.jpg'
-            # antes: '/home/gabriel/Documentos/uea-news/templates/static/images/boletim.jpg'
-            # '/home/lury/Área de Trabalho/projeto/uea-news/templates/static/images/logo-governo.jpg'
-            CAPA_TITULO = "BOLETIM N°" + str(boletins.id)
-
-            boletim.desenharCapa(pdf, boletim_path, CAPA_TITULO)
-
-            def add_page():
-                pdf.showPage()
-                boletim.draw_header(pdf)
-
-            conta_cata_subtitulo = 'UNIVERSIDADE DO ESTADO DO AMAZONAS'
-            doe = CAPA_TITULO
-            boletim.desenharContraCapa(pdf, doe, conta_cata_subtitulo)
-
-            pdf.setFont('Helvetica-Bold', 12)
-            
-            assinante_unicas = []
-            autoridade = ""
-            asdf = 620
-            y = 600
-            for ato in atos:
-                assinante_atual = str(ato.assinante1).split('/')[0]
-                assinante2 = str(ato.assinante2)
-                autoridade = ato.autoridade1
-                autoridade2 = ato.autoridade2
-                print(autoridade2)
-                if assinante_atual and assinante_atual not in assinante_unicas:
-                    assinante_unicas.append(assinante_atual)
-                    pdf.setFont('Helvetica', 12)
-                    pdf.drawString(280, asdf, assinante_atual)
-                    pdf.drawString(280, y, assinante2)
-                    pdf.setFont('Helvetica-Bold', 12)
-                    pdf.drawString(280, 610, autoridade)
-                    pdf.drawString(280, 580, autoridade2)
-
-                    y -= 20
-                    asdf -= 20
-
-
-            add_page()
-
-            y = 650 
-           
-            boletim.desenharSumario(pdf, doe, conta_cata_subtitulo)
-            for ato in atos:
-
-                ato_posicao = pdf.stringWidth(ato.tipo_ato, 'Helvetica-Bold', 12)
-
-                data_str = str(ato.doe_data)
-                ano = data_str[0:4]
-
-                doe_str = str(ato.numero)
-                doe = "PORTARIA N°" + doe_str + "/" + ano
-                pdf.setFont('Helvetica-Bold', 12)
-                pdf.drawString(180, y, doe)
-                pdf.setFont("Helvetica", 12)
-                y -= 20 
-            add_page()
-
-            
-            
-            x = 70
-            y = 650
-            tamanho_fonte = 12
-            limite_largura = 520
-            limite_altura = 100
-            espacamento_margem = 10  # Espaçamento desejado para as margens
-
-        
-            for ato in atos:
-                assinatura = str(ato.assinante1).split('/')[0]
-                assinatura2 = ato.assinante2
-
-                paragrafos = ato.texto_normativo.splitlines()
-                for index, paragrafo in enumerate(paragrafos):
-                    if index == 0:
-                        pdf.setFont("Helvetica-Bold", 12)
-                        pdf.drawString(240, y, ato.tipo_ato.upper())
-
-                        ato_posicao = pdf.stringWidth(ato.tipo_ato, 'Helvetica-Bold', 12)
-                        n_posicao = 304 + ato_posicao + -43
-                        limite_x = 550  # Limite horizontal do documento
-                        if n_posicao > limite_x:
-                            n_posicao = limite_x
-
-                        data_str = str(ato.doe_data)
-                        ano = data_str[0:4]
-
-                        doe_str = str(ato.numero)
-                        doe = "N°" + doe_str + "/" + ano
-
-                        pdf.setFont('Helvetica-Bold', 12)
-                        pdf.drawString(n_posicao, y, doe)
-                        pdf.setFont("Helvetica", 12)
-
-                        y -= tamanho_fonte + 2
-
-                    if y - tamanho_fonte < limite_altura:
-                        add_page()
-                        y = 650
-
-                    # Calcular a largura disponível considerando a margem esquerda e a margem direita
-                    largura_disponivel = limite_largura - x
-
-                    if pdf.stringWidth(paragrafo, 'Helvetica', 12) > largura_disponivel:
-                        # Verificar se o parágrafo completo cabe na página atual
-                        palavras = paragrafo.split(' ')
-                        paragrafo_temp = ''
-                        for palavra in palavras:
-                            if pdf.stringWidth(paragrafo_temp + palavra, 'Helvetica', 12) < largura_disponivel:
-                                paragrafo_temp += palavra + ' '
-                            else:
-                                # Desenhar o parágrafo atual
-                                pdf.drawString(x, y, paragrafo_temp)
-                                # Atualizar a posição vertical para o próximo parágrafo
-                                y -= tamanho_fonte + 2
-                                paragrafo_temp = palavra + ' '
-
-                        # Desenhar o restante do parágrafo
-                        pdf.drawString(x, y, paragrafo_temp)
-                    else:
-                        # Desenhar o parágrafo completo
-                        pdf.drawString(x, y, paragrafo)
-
-                    if index == len(paragrafos) - 1:
-                                # Desenhar a assinatura apenas uma vez no final do parágrafo
-                        y_assinatura = y - tamanho_fonte - 1
-                        pdf.setFont("Helvetica-Bold", 12)
-                        pdf.drawString(200, y_assinatura, assinatura.upper())
-                        y = y_assinatura - 15 
-                        pdf.setFont('Helvetica', 12)
-                        pdf.drawString(180,y, 'UNIVERSIDADE DO ESTADO DO AMAZONAS')
-                    y -= tamanho_fonte + 2                    
-                    pdf.setFont("Helvetica-Bold", 12)
-                    pdf.drawString(250, 750, CAPA_TITULO)
-                    data_str = str(ato.doe_data)
-                    ano = data_str[0:4]
-
-                    pdf.setFont('Helvetica', 12)
-                    pdf.drawString(180, 730, 'UNIVERSIDADE DO ESTADO DO AMAZONAS')
-                    pdf.drawString(300,25, f"{pdf.getPageNumber() + 1}")
-                y -= espacamento_margem 
-
-        else:
-
-            portaria = Portaria()
-            ato = get_object_or_404(AtoNormativ, id=int(ato_ids))
-            pdf = canvas.Canvas(response, pagesize=letter)       
-
-            FONT = "Helvetica"
-            FONT_BOLD = "Helvetica-Bold"
-            font_size2 = 8
-
-            pdf.setFont(FONT_BOLD, 12)
-
-            data_str = str(ato.doe_data)
-            ano = data_str[0:4]
-            doe = " N°" + str(ato.numero) + "/" + ano
-
-            pdf.drawString(240, 680, ato.tipo_ato.upper() + doe)
-
-            def add_page():
-                pdf.showPage()
-                portaria.draw_header(pdf)
-                portaria.draw_footer(pdf)
-            
-            limite_largura = 550
-            limite_altura = 100
-
-            MARGIN_LEFT = 50
-            MARGIN_BOTTOM = 650  
-            tamanho_fonte = 12
-
-            portaria.draw_header(pdf)
-            portaria.draw_footer(pdf)
-
-            palavras = ato.texto_normativo.split()
-
-            for palavra in palavras:
-                largura_palavra = pdf.stringWidth(palavra, FONT, tamanho_fonte)
-
-                if MARGIN_LEFT + largura_palavra < limite_largura:
-                    pdf.drawString(MARGIN_LEFT, MARGIN_BOTTOM, palavra )
-                    MARGIN_LEFT += largura_palavra + pdf.stringWidth(" ", FONT, tamanho_fonte)
-                else:
-                    MARGIN_LEFT = 50
-                    MARGIN_BOTTOM -= tamanho_fonte + 2
-
-                    if MARGIN_BOTTOM < limite_altura:
-                        add_page()
-                        MARGIN_BOTTOM = 700
-
-                    pdf.drawString(MARGIN_LEFT, MARGIN_BOTTOM, palavra + " ")
-                    MARGIN_LEFT += largura_palavra + pdf.stringWidth("", FONT, tamanho_fonte)
-            assinante = str(ato.assinante1).split('/')[0]
-
-            altura_texto_embaixo = pdf.stringWidth(assinante, FONT, 12)
-
-            y_embaixo = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -20  # Ajuste conforme necessário
-            y_abaixo = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -9
-        
-
-            pdf.setFont(FONT_BOLD, tamanho_fonte)
-
-            largura_assinante = pdf.stringWidth(assinante, FONT_BOLD, tamanho_fonte)
-
-            y_assinante = y_embaixo + tamanho_fonte
-
-            y_autoridade = y_abaixo + tamanho_fonte
-
-            def centralizar(text):
-                return ((letter[0] - text) / 2)
-
-            pdf.drawString(centralizar(largura_assinante), y_assinante, assinante.upper())
-
-            TEXTO_FUNCAO = ato.autoridade1 + " Da Universidade Do Estado Do Amazonas"
-            
-            largura_autoridade = pdf.stringWidth(TEXTO_FUNCAO, FONT, tamanho_fonte)
-
-            pdf.setFont(FONT, tamanho_fonte)
-
-            pdf.drawString(centralizar(largura_autoridade), y_autoridade, TEXTO_FUNCAO)
-            
-            DATE_MARGIN_X = 50
-            altura_texto_embaixo = pdf.stringWidth(assinante, FONT, 12)
-
-            y_outro = MARGIN_BOTTOM - tamanho_fonte - altura_texto_embaixo - -10
-
-            data_objeto = datetime.strptime(data_str[:10], "%Y-%m-%d")
-            data_br = data_objeto.strftime("%d-%m-%Y")
-            
-            TEXT_ASSINATURA = "Assinado por: " + assinante
-            TEXT_DATE = f"Data: {data_br}"
-
-            DATA_POSITION_Y = y_outro - 10
-
-            pdf.setFont(FONT, font_size2)
-
-            pdf.drawString(DATE_MARGIN_X, y_outro, TEXT_ASSINATURA)
-            pdf.drawString(DATE_MARGIN_X, DATA_POSITION_Y, TEXT_DATE)
-
-        pdf.save()
-        response.write(packet.getvalue())
-        return response
-
-        
-
-@login_required
-def editar_ato(request, ato_id):
-    ato = get_object_or_404(AtoNormativ, pk=ato_id)
+    else:
+        return render(request, 'edit.html')
+    
+def adicionar_grupo_de_pesquisa(request, laboratorio_id=None):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id) if laboratorio_id else request.user.laboratorio
 
     if request.method == 'POST':
-        ato.texto_normativo = request.POST.get('texto_normativo')
-        ato.ementa = request.POST.get('ementa')
-        ato.ano = request.POST.get('ano')
-        ato.numero = request.POST.get('numero')
-        ato.doe_pagina = request.POST.get('doe_pagina')
-        ato.doe_secao = request.POST.get('doe_secao')
-        ato.doe_numero = request.POST.get('doe_numero')
-        autoridade1_id = request.POST.get('cargoDaAutoridadePrimaria')
-        ato.autoridade1 = Autoridade.objects.get(pk=autoridade1_id).nome if autoridade1_id else None
-        ato.autoridade2 = request.POST.get('cargoDaAutoridadeSecundaria')
-        assinante1_id = request.POST.get('assinante1')
-        ato.assinante1 = Autoridade.objects.get(pk=assinante1_id) if assinante1_id else None
-        ato.tipo_ato = request.POST.get('tipo_ato')
-        ato.status = request.POST.get('status')
-        ato.save()
-        messages.success(request, 'Ato atualizado com sucesso.')
-        return redirect('view', ato_id=ato.id)
+        nome_do_grupo = request.POST.get('nome_do_grupo')
+        area = request.POST.get('area')
+        link_grupo = request.POST.get('link_grupo')
 
-    assinantes = Autoridade.objects.all()
-    if request.POST.get('aprovar_ato'):
-        ato.status = 'aprovado'
-        ato.save()
-        return redirect('main')
+        # Crie uma nova instância de GrupoDePesquisa com os dados fornecidos
+        grupo_de_pesquisa = GrupoDePesquisa.objects.create(
+            nome_do_grupo=nome_do_grupo,
+            area=area,
+            link_grupo=link_grupo
+        )
+
+        # Associe o grupo de pesquisa ao laboratório atual
+        laboratorio.grupos_de_pesquisa.add(grupo_de_pesquisa)
+
+        # Redirecione para a página de edição do laboratório ou para onde for adequado
+        return redirect('editar_laboratorio', laboratorio.id, 0)
+
+    grupos_de_pesquisa = laboratorio.grupos_de_pesquisa.all()
+
+    return render(
+        request,
+        'adicionar_grupo_de_pesquisa.html',
+        {'laboratorio': laboratorio, 'grupos_de_pesquisa': grupos_de_pesquisa}
+    )
     
-    context = {'ato': ato, 'assinantes': assinantes}
-    return render(request, 'editar_ato.html', context)
+def editar_infraestrutura(request, laboratorio_id):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+    marcas = Marca.objects.all()
+    equipamentos = Equipamento.objects.all()
+    infraestruturas = laboratorio.infraestruturas.all()
+
+    if request.method == 'POST' and 'salvar_infraestrutura' in request.POST:
+        equipamento_id = request.POST.get('equipamento')
+        marca_id = request.POST.get('marca')
+        modelo = request.POST.get('modelo')
+        finalidade = request.POST.get('finalidade')
+
+        # Verifique se uma imagem foi enviada
+        novas_imagens = request.FILES.getlist('nova_imagem')
+
+        # Crie uma nova infraestrutura
+        infraestrutura = Infraestrutura.objects.create(
+            equipamento_id=equipamento_id,
+            marca_id=marca_id,
+            modelo=modelo,
+            finalidade=finalidade,
+        )
+
+        # Associe a nova infraestrutura ao laboratório atual
+        LaboratorioInfraestrutura.objects.create(laboratorio=laboratorio, infraestrutura=infraestrutura)
+
+        # Se uma nova imagem foi enviada, crie uma instância de ImagemInfraestrutura para cada imagem
+        for nova_imagem in novas_imagens:
+            imagem_infraestrutura = ImagemInfraestrutura(imagem=nova_imagem, infraestrutura=infraestrutura)
+            imagem_infraestrutura.save()
+
+        print('Infraestrutura criada com sucesso!')
+        # Redirecione para a página de edição do laboratório ou para onde for adequado
+        return HttpResponseRedirect(reverse('editar_laboratorio', args=[laboratorio.id, 0]))
+
+    return render(
+        request,
+        'editar_infraestrutura.html',
+        {'laboratorio': laboratorio, 'marcas': marcas, 'equipamentos': equipamentos, 'infraestruturas': infraestruturas}
+    )
+
+def equipamento(request):
+   
+    laboratorios = Laboratorio.objects.all()
+  
+    return render(request, 'equipamento.html', {
+        'laboratorios': laboratorios,
+    })
+
+def salvar_equipamento(request):
+    if request.method == "POST":
+        try:   
+            equipamento = request.POST.get("equipamento")
+            marca = request.POST.get("marca")
+            modelo = request.POST.get("modelo")
+            finalidade = request.POST.get("finalidade")
+          
+
+  # Salvar os dados no banco de dados
+            Infraestrutura.objects.create(
+                equipamento=equipamento,
+                marca=marca,
+                modelo=modelo,
+                finalidade=finalidade,
+                
+            )
+
+            messages.add_message(request, messages.SUCCESS, 'Salvo com sucesso.')
+            return render(request, 'equipamento.html')
+        except:
+            messages.add_message(request, messages.WARNING, 'O sistema apresenta falhas internas.')
+            return redirect('../equipamento/')
+    else:
+        return render(request, 'equipamento.html')
+
 
 
 def paginar(list, limit_per_page, request): 
@@ -445,37 +417,6 @@ def aprovados(request):
     context = paginar(atos_list, 16, request);
     return render(request, 'main.html', context)
 
-def boletim(request):
-    atos_list = AtoNormativ.objects.filter(status='aprovado')
-    context_paginacao = paginar(atos_list, 18, request)
-
-    # Combinando os dois contextos em um único dicionário
-    context = {**context_paginacao}
-
-    return render(request, 'boletim.html', context)
-@login_required
-def cancelados(request):
-    atos_list = AtoNormativ.objects.filter(status='cancelado')
-    context = paginar(atos_list, 16, request);
-    return render(request, 'main.html', context)
-
-@login_required
-def rascunhos(request):
-    atos_list = AtoNormativ.objects.filter(status='rascunho')
-    context = paginar(atos_list, 16, request);
-    return render(request, 'main.html', context)
-
-@login_required
-def revisao(request):
-    atos_list = AtoNormativ.objects.filter(status='revisao')
-    context = paginar(atos_list, 16, request);
-    return render(request, 'main.html', context)
-
-@login_required
-def pendentes(request):
-    atos_list = AtoNormativ.objects.filter(status='pendente')
-    context = paginar(atos_list, 16, request);
-    return render(request, 'main.html', context)
 
 def pesquisar(request):
     if request.method == 'GET':
@@ -483,52 +424,208 @@ def pesquisar(request):
         atos = AtoNormativ.objects.filter(texto_normativo__icontains=termo_pesquisa)  # Filtra os atos com base no termo de pesquisa
         context = {'atos': atos}
         return render(request, 'resultado_pesquisa.html', context)
+    
+def visualizar_arquivo(request, laboratorio_id):
+    try:
+        laboratorio = Laboratorio.objects.get(pk=laboratorio_id)
+        if laboratorio.ato_anexo:
+            response = HttpResponse(laboratorio.ato_anexo, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="arquivo.pdf"'  # Pode ajustar o nome do arquivo
+            return response
+    except Laboratorio.DoesNotExist:
+        pass
 
-def boletins_salvos(request):
-    boletim = BoletimGerado.objects.all() 
+    return HttpResponse("Arquivo não encontrado.", status=404)
 
-    for b in boletim:
-        ato_normativ_index = b.conteudo_pdf.find('AtoNormativ:')
-        if ato_normativ_index != -1:
-            b.conteudo_pdf = b.conteudo_pdf[ato_normativ_index + len('AtoNormativ:'):]
-        else:
-            b.conteudo_pdf = b.conteudo_pdf
-    return render(request, 'boletins_salvos.html',  {'boletim': boletim})
+def visualizar_imagens(request, laboratorio_id):
+    laboratorio = Laboratorio.objects.get(pk=laboratorio_id)
+    imagens = laboratorio.imagens.all()
+    return render(request, 'visualizar_imagens.html', {'laboratorio': laboratorio, 'imagens': imagens})
 
-def get_oracle_users(request):
-    # Configurações de conexão com o banco de dados Oracle
-    db_settings = {
-        'USER': 'cons_oberon',
-        'PASSWORD': 'pwdconsoberon',
-        'HOST': '10.70.0.14',
-        'PORT': '1521',
-        'SERVICE_NAME': 'prouea2',
-    }
+def view_imagem(request, imagem_id):
+    try:
+        imagem = ImagemLaboratorio.objects.get(pk=imagem_id)
+        imagem_bin = imagem.imagem
 
-    # Estabelece a conexão com o banco de dados Oracle
-    connection = cx_Oracle.connect(
-        f"{db_settings['USER']}/{db_settings['PASSWORD']}@{db_settings['HOST']}:{db_settings['PORT']}/{db_settings['SERVICE_NAME']}"
+        # Configurar o cabeçalho de tipo de conteúdo para uma imagem
+        response = HttpResponse(content_type="image/jpeg")
+        
+        # Abra a imagem usando o Pillow (PIL)
+        image = Image.open(io.BytesIO(imagem_bin))
+
+        # Converta a imagem para o modo RGB
+        image = image.convert("RGB")
+        
+        # Salve a imagem no formato JPEG
+        image.save(response, format="JPEG")
+
+        return response
+    except ObjectDoesNotExist:
+        return HttpResponse("Imagem não encontrada.", status=404)
+
+def editar_laboratorio(request, laboratorio_id, imagem_id):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+
+    if request.method == 'POST':
+        # Processar os campos do formulário
+        laboratorio.nome_laboratorio = request.POST.get('nome_laboratorio', '')
+        laboratorio.responsavel = request.POST.get('responsavel', '')
+        laboratorio.email = request.POST.get('email', '')
+        laboratorio.data_criacao = request.POST.get('data_criacao', '')
+        laboratorio.apresentacao = request.POST.get('apresentacao', '')
+        laboratorio.objetivos = request.POST.get('objetivos', '')
+        laboratorio.descricao = request.POST.get('descricao', '')
+        laboratorio.link_pnipe = request.POST.get('link_pnipe', '')
+
+        # Outros campos...
+
+        # Processar a imagem, se presente
+        imagem_laboratorio = request.FILES.get('imagem_laboratorio')
+        if imagem_laboratorio:
+            # Crie uma instância de ImagemLaboratorio associada ao laboratório
+            imagem = ImagemLaboratorio(imagem=imagem_laboratorio)
+            imagem.save()
+            laboratorio.imagens.add(imagem)
+
+        laboratorio.save()
+        messages.success(request, 'Laboratório atualizado com sucesso.')
+        return redirect('editar_laboratorio', laboratorio_id=laboratorio.id, imagem_id=imagem_id)
+
+    # Inclua o objeto laboratorio no contexto
+    return render(request, 'editar_laboratorio.html', {'laboratorio': laboratorio})
+
+def editar_endereco(request, laboratorio_id):
+    laboratorio = get_object_or_404(Laboratorio, pk=laboratorio_id)
+
+    if request.method == 'POST':
+        try:
+            # Recupere os valores atualizados dos campos de endereço do formulário
+            unidade = request.POST.get('unidade')
+            rua = request.POST.get('rua')
+            numero_rua = request.POST.get('numero_rua')
+            cep = request.POST.get('cep')
+            bairro = request.POST.get('bairro')
+            andar = request.POST.get('andar')
+            sala = request.POST.get('sala')
+
+            # Atualize os campos de endereço do objeto Laboratorio
+            laboratorio.unidade = unidade
+            laboratorio.rua = rua
+            laboratorio.numero_rua = numero_rua
+            laboratorio.cep = cep
+            laboratorio.bairro = bairro
+            laboratorio.andar=andar
+            laboratorio.sala=sala
+
+            # Salve o objeto Laboratorio atualizado no banco de dados
+            laboratorio.save()
+
+            # Adicione uma mensagem de sucesso
+            messages.success(request, 'Endereço atualizado com sucesso.')
+
+            # Redirecione para a página de detalhes do laboratório ou para onde desejar
+            # Neste exemplo, estamos redirecionando para a página de edição de endereço novamente
+            return redirect('editar_endereco', laboratorio_id=laboratorio_id)
+        except Exception as e:
+            # Trate qualquer exceção que possa ocorrer
+            print('Erro:', str(e))
+            messages.error(request, f'Erro ao atualizar o endereço: {str(e)}')
+
+    # Renderize o template com os detalhes do laboratório e o formulário para edição de endereço
+    return render(request, 'editar_endereco.html', {'laboratorio': laboratorio})
+
+
+def visualizar_membros_laboratorio(request, laboratorio_id):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+    membros = laboratorio.membros.all()
+
+    if request.method == 'POST':
+        # Lógica para adicionar ou atualizar membros, se necessário
+        nome_membro = request.POST.get('nome_membro')
+        funcao = request.POST.get('funcao')
+        curriculo_lattes = request.POST.get('curriculo_lattes')
+
+        if nome_membro and funcao:
+            membro, created = MembroLaboratorio.objects.get_or_create(
+                laboratorio=laboratorio,
+                nome_membro=nome_membro,
+                defaults={'funcao': funcao, 'curriculo_lattes': curriculo_lattes}
+            )
+
+    return render(
+        request,
+        'visualizar_membros.html',
+        {'laboratorio': laboratorio, 'membros': membros}
     )
 
-    # Cria um cursor para executar consultas
-    cursor = connection.cursor()
 
-    try:
-        # Executa uma consulta para obter os nomes do campo USER_LDAP da tabela USUARIO no esquema OBERON
-        cursor.execute("SELECT USUARIO FROM OBERON.USUARIOPADACES")
+def export_to_excel(request):
 
-        # Recupera todos os registros retornados pela consulta
-        results = cursor.fetchall()
+    if request.method == "POST":
+        unidade = request.POST.get('unidade')
+        export_all = request.POST.get('export_all')
 
-        # Lista para armazenar os nomes de usuário
-        usernames = [row[0] for row in results]
 
-        # Renderiza o template 'edit.html' com os nomes de usuário
-        return render(request, 'edit.html', {'usernames': usernames})
+        if unidade:
+            laboratorios = Laboratorio.objects.filter(unidade=unidade)
+            equipamentos = Infraestrutura.objects.all()
+            regimentos_internos = RegimentoInterno.objects.all()
 
-    finally:
-        # Fecha o cursor e a conexão com o banco de dados
-        cursor.close()
-        connection.close()
-        
-        
+        if export_all:
+            laboratorios = Laboratorio.objects.all()
+            equipamentos = Infraestrutura.objects.all()
+            regimentos_internos = RegimentoInterno.objects.all()
+
+    print(laboratorios)
+
+    # usuario = Unidade.objects.all()
+    # print(usuario)
+
+    laboratorios_df = pd.DataFrame(list(laboratorios.values()))
+    regimentos_internos_df = pd.DataFrame(list(regimentos_internos.values()))
+    equipamentos_df = pd.DataFrame(list(equipamentos.values()))
+
+    # Verifique se 'laboratorio_id' existe em equipamentos_df
+    if 'laboratorio_id' in equipamentos_df.columns:
+        equipamentos_df = equipamentos_df.drop(columns=['laboratorio_id'])
+
+    # Combine os DataFrames
+    combined_df = pd.merge(laboratorios_df, regimentos_internos_df, left_on='id', right_on='laboratorio_id', how='left')
+    combined_df = pd.merge(combined_df, equipamentos_df, left_on='laboratorio_id', right_on='id', how='left')
+
+    # Reorganize pelo ID (ou outro campo desejado)
+    combined_df = combined_df.sort_values(by='id')
+
+    # Remova as colunas 'id' e 'laboratorio_id'
+    combined_df = combined_df.drop(columns=['id', 'laboratorio_id', 'id_x', 'id_y'])
+
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+
+    worksheet.title = 'Laboratório'
+
+    fill_green_dark = PatternFill(start_color="008000", end_color="008000", fill_type="solid")
+
+    row_colors = ['00ff00', '4aea37', '70bf5d', '79aa6b', '7e9576', '808080']
+
+    for col_idx, column_name in enumerate(combined_df.columns, 1):
+        cell = worksheet.cell(row=1, column=col_idx, value=column_name)
+        cell.fill = fill_green_dark
+
+    for row_idx, row in enumerate(combined_df.itertuples(), 2):
+        row_color = row_colors[row_idx % len(row_colors)]
+        for col_idx, value in enumerate(row[1:], 1):
+            cell = worksheet.cell(row=row_idx, column=col_idx, value=value)
+            cell.fill = PatternFill(start_color=row_color, end_color=row_color, fill_type="solid")
+
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="laboratorios_data.xlsx"'
+
+    workbook.save(response)
+
+    return response
+    
+
+
+
+
