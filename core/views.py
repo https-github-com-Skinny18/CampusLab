@@ -223,8 +223,8 @@ def salvar_laboratorio(request):
             modelo = request.POST.get('modelo')
             finalidade = request.POST.get('finalidade')
 
-            # Email(email, nome_laboratorio, responsavel)
-            # export_to_excel(request=request)
+            Email(email, nome_laboratorio, responsavel)
+
             try:
                 equipamento = Equipamento.objects.get(id=equipamento_id)
             except Equipamento.DoesNotExist:
@@ -564,6 +564,7 @@ def export_to_excel(request):
     if request.method == "POST":
         unidade = request.POST.get('unidade')
         export_all = request.POST.get('export_all')
+        laboratorio = request.POST.get('laboratorios')
 
 
         if unidade:
@@ -576,10 +577,12 @@ def export_to_excel(request):
             equipamentos = Infraestrutura.objects.all()
             regimentos_internos = RegimentoInterno.objects.all()
 
-    print(laboratorios)
+        if laboratorio:
+            laboratorios = Laboratorio.objects.filter(id=laboratorio)
+            equipamentos = Infraestrutura.objects.all()
+            regimentos_internos = RegimentoInterno.objects.all()
+        
 
-    # usuario = Unidade.objects.all()
-    # print(usuario)
 
     laboratorios_df = pd.DataFrame(list(laboratorios.values()))
     regimentos_internos_df = pd.DataFrame(list(regimentos_internos.values()))
