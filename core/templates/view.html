@@ -4,58 +4,207 @@
 <body>
    {% include 'parciais/navbar.html'%}
    <div class="container">
-      <div class="card mt-4">
 
-         <div class="card-header">
-            <div class="d-flex justify-content-between">
-               <h3>Informações do Laboratorio</h3>
+      <div class="row">
+         <div class="col-md-7">
+            <div class="card mt-4">
 
-               <a href="{% url 'editar_laboratorio' laboratorio_id=laboratorio.id imagem_id=0 %}"
-                  class="ml-2 btn btn-primary">Editar Laboratório <i class="bi bi-pen"></i></a>
+               <div class="card-header">
+                  <div class="d-flex justify-content-between">
+                     <h3>Informações do Laboratorio</h3>
+      
+                     <a href="{% url 'editar_laboratorio' laboratorio_id=laboratorio.id imagem_id=0 %}"
+                        class="ml-2 btn btn-primary">Editar Laboratório <i class="bi bi-pen"></i></a>
+                  </div>
+               </div>
+      
+               <div class=" bg-default">
+                  <!-- Aqui você pode adicionar os links para edição ou download, se necessário -->
+               </div>
+      
+              
+               <div class="card-body">
+                
+      
+                     <div id="carouselExampleIndicators" class="carousel slide w-100" data-bs-ride="carousel">
+                       <div class="carousel-indicators">
+                         <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                         <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                         <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                       </div>
+                       <div class="carousel-inner">
+                         <div class="carousel-item active">
+                          <img src="https://static.vecteezy.com/ti/fotos-gratis/t2/6671766-fantastica-lua-magica-luz-e-agua-barco-com-arvore-papel-de-parede-gratis-foto.jpg" class="imagem d-block w-100" alt="...">
+                       </div>
+                         <div class="carousel-item">
+                          <img src="https://static.vecteezy.com/ti/fotos-gratis/t2/6671766-fantastica-lua-magica-luz-e-agua-barco-com-arvore-papel-de-parede-gratis-foto.jpg" class="imagem d-block w-100" alt="...">
+                       </div>
+                         <div class="carousel-item">
+                          <img src="https://static.vecteezy.com/ti/fotos-gratis/t2/6671766-fantastica-lua-magica-luz-e-agua-barco-com-arvore-papel-de-parede-gratis-foto.jpg" class="imagem d-block w-100" alt="...">
+                       </div>
+                       </div>
+                       <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+                         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                         <span class="visually-hidden">Previous</span>
+                       </button>
+                       <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+                         <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                         <span class="visually-hidden">Next</span>
+                       </button>
+                     </div>
+           
+                     <p class="card-title">Nome do Laboratório: {{ laboratorio.nome_laboratorio|default_if_none:'' }}</p>
+                     <p class="card-title">Responsável: {{ laboratorio.responsavel|default_if_none:'' }}</p>
+                     <p class="card-title">Email: {{ laboratorio.email|default_if_none:'' }}</p>
+                     <p class="card-title">Link do Pnipe: <a href=" {{ laboratorio.link_pnipe|default_if_none:'' }}"target="_blank">{{ laboratorio.link_pnipe|default_if_none:'' }}</a></p>  </a>  
+                     <p class="card-title">Telefone: {{ laboratorio.telefone|default_if_none:'' }}</p>
+                     <p class="card-title">Bairro: {{ laboratorio.bairro|default_if_none:'' }}</p>
+      
+                    <!-- Adicione aqui outras informações relevantes do laboratório -->
+                    <h3>Informações de Infraestrutura</h3>
+      
+                    {% if infraestruturas %}
+                       <table class="table  table-striped table-hover">
+                                  <thead>
+                                    <tr>
+                                      <th>Status</th>
+                                      <th>Equipamento</th>
+                                      <th>Marca</th>
+                                      <th>Modelo</th>
+                                      <th>Finalidade</th>
+                                    </tr>
+                                  </thead>
+                                  {% for laboratorio_infraestrutura in infraestruturas %}
+      
+                                  <tbody>
+                                    <tr>
+      
+                                      <td>
+                                      {% if laboratorio_infraestrutura.status == True %}
+                                          <div class="status  bg-warning rounded-circle" >
+      
+                                          </div>
+                                          {% endif %}
+                                          {% if laboratorio_infraestrutura.status == False %}
+                                          <div class="status  bg-warning-2 rounded-circle" >
+                                
+                                          </div>
+                                          {% endif %}
+                                      </td>
+                                      <td>{{ laboratorio_infraestrutura.equipamento.nome_equipamento}}</td>
+                                      <td>{{ laboratorio_infraestrutura.marca.nome_marca }}</td>
+                                      <td>{{ laboratorio_infraestrutura.modelo }}</td>
+                                      <td>{{ laboratorio_infraestrutura.finalidade|default_if_none:'' }}</td>
+                                      
+      
+                                    </tr>
+                                  </tbody>
+                                  {% endfor %}
+      
+                                </table>
+                    {% else %}
+                      <p>Nenhuma infraestrutura encontrada para este laboratório.</p>
+                    {% endif %}
+      
+                     <!-- Adicione aqui outras informações relevantes da infraestrutura -->
+                  </div>
+               </div>
             </div>
-         </div>
 
-         <div class=" bg-default">
-            <!-- Aqui você pode adicionar os links para edição ou download, se necessário -->
-         </div>
-         <div class="card-body">
-            <div class="tab-content bg-red-500">
+         <div class="col-md-5">
+            <div class="card mt-4">
+
+               <div class="card-header">
+                  <div class="d-flex justify-content-between">
+                     <h3>Endereço</h3>
+                  </div>
+               </div>
+      
+               <div class="card-body">
+                  <div class="row">
+                     <div class="col-md-6">
+                        <h5>Unidade:</h5>
+                        <p>{{laboratorio.unidade}}</p>
+                        <h5>Rua:</h5>
+                        <p>{{laboratorio.rua}}</p>
+                     
+                        
+                        <h5>Andar:</h5>
+                        <p>{{laboratorio.andar}}</p>
+                     </div>
+                     <div class="col-md-6">
+                        <h5>Bairro:</h5>
+                        <p>{{laboratorio.bairro}}</p>
+                       
+                        <h5>Numero:</h5>
+                        <p>{{laboratorio.numero_rua}}</p>
+                        <h5>Cep:</h5>
+                        <p>{{laboratorio.cep}}</p>
+                     </div>
+                  </div>
+                  
+                
+               </div>
+            </div>     
 
 
-               <p class="card-title">Nome do Laboratório: {{ laboratorio.nome_laboratorio|default_if_none:'' }}</p>
-               <p class="card-title">Responsável: {{ laboratorio.responsavel|default_if_none:'' }}</p>
-               <p class="card-title">Email: {{ laboratorio.email|default_if_none:'' }}</p>
-               <p class="card-title">Link do Pnipe: <a href=" {{ laboratorio.link_pnipe|default_if_none:'' }}"target="_blank">{{ laboratorio.link_pnipe|default_if_none:'' }}</a></p>  </a>  
-               <p class="card-title">Telefone: {{ laboratorio.telefone|default_if_none:'' }}</p>
-               <p class="card-title">Bairro: {{ laboratorio.bairro|default_if_none:'' }}</p>
+               <div class="card mt-4">
 
-              <!-- Adicione aqui outras informações relevantes do laboratório -->
-              <h3>Informações de Infraestrutura</h3>
+                  <div class="card-header">
+                     <div class="d-flex justify-content-between">
+                        <h3>Anexos</h3>
+                     </div>
+                  </div>
+         
+                  <div class="card-body">
+                     <div class="row">
+                           <ul class="list-group mb-4">
+                              <h5>Regimento Interno:</h5>
+                              {% for regimento in regimentos_internos %}
+                              {% if regimento.status == True %}
 
-              {% if infraestruturas %}
-                <ul>
-                  {% for laboratorio_infraestrutura in infraestruturas %}
-                    <li>
-                      <p class="card-title">Equipamento: {{ laboratorio_infraestrutura.infraestrutura.equipamento.nome_equipamento|default_if_none:'' }}</p>
-                      <p class="card-title">Marca: {{ laboratorio_infraestrutura.infraestrutura.marca.nome_marca|default_if_none:'' }}</p>
-                      <p class="card-title">Modelo: {{ laboratorio_infraestrutura.infraestrutura.modelo|default_if_none:'' }}</p>
-                      <p class="card-title">Finalidade: {{ laboratorio_infraestrutura.infraestrutura.finalidade|default_if_none:'' }}</p>
+                              <li class="list-group-item">
+                            
+                                
+                                <a href="{% url 'visualizar_regimento_interno' regimento_id=regimento.id %}" class="btn btn-sm btn-link"
+                                  target="_blank">
+                                  <i class="fa fa-file-pdf-o"></i> Visualizar PDF
+                                </a>
+                                {{ regimento }}
+                                
+                                  
+                              </li>
+                              {% endif %}
+
+                              {% endfor %}
+                            </ul>
+                        
+
+                            <ul class="list-group mb-4">
+                              <h5>Ato Gerador:</h5>
+                              {% for unidade_academica in unidades_academicas %}
+                              <li class="list-group-item">
+                                <a href="{% url 'visualizar_pdf' unidade_academica.id %}" class="btn btn-sm btn-link" target="_blank">
+                                  <i class="fa fa-file-pdf-o"></i> Visualizar PDF
+                                </a>
+                                {{ unidade_academica }}
                       
-                      <!-- Exiba as imagens associadas à infraestrutura, se existirem -->
-                      {% for imagem in laboratorio_infraestrutura.infraestrutura.imagens_infraestrutura.all %}
-                        <img src="{{ imagem.imagem.url }}" alt="Imagem da Infraestrutura" width="100">
-                      {% endfor %}
-                    </li>
-                  {% endfor %}
-                </ul>
-              {% else %}
-                <p>Nenhuma infraestrutura encontrada para este laboratório.</p>
-              {% endif %}
-
-               <!-- Adicione aqui outras informações relevantes da infraestrutura -->
-            </div>
+                               
+                      
+                      
+                              </li>
+                              {% endfor %}
+                            </ul>
+                     </div>
+                     
+                   
+                  </div>
+               </div>
+               
          </div>
       </div>
+
+     
    </div>
    {% include 'parciais/footer.html'%}
 </body>

@@ -1,57 +1,104 @@
-{% load static %}
-{% include 'parciais/head.html' %}
-<style>
-    .form-check-label {
-        margin-left: 10px;
-    }
-</style>
+{% load static %} 
+{% include 'parciais/head.html' %} 
+{% include 'parciais/navbar.html' %} 
+{% include 'parciais/ferramentas.html' %}
 
-<body>
-    {% include 'parciais/navbar.html' %}
-    <div class="container">
-        <!-- Adicione o código para exibir a mensagem de sucesso aqui -->
-        {% if messages %}
-        <div class="alert alert-success">
-            <ul>
-                {% for message in messages %}
-                <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
+<div class="container">
+  {% if messages %}
+  <div class="alert alert-success">
+    <ul>
+      {% for message in messages %}
+      <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
 
-        <form action="{% url 'editar_endereco' laboratorio_id=laboratorio.id %}" id="formulario_autoridade"
-            method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-
-            <div class="tab-content" id="myTabContent">
-                {% include 'parciais/ferramentas.html' %}
-                <section class="rounded" id="formulario_autoridade">
-                    <!-- Guia Endereço -->
-                    <div class="tab-pane " id="endereco-tab" role="tabpanel" aria-labelledby="endereco-tab">
-                        <h5 class="titulo">Endereço</h5>
-
-                        <input class="form-control " placeholder="Unidade acadêmica" name="unidade"
-                            value="{% if laboratorio.unidade %}{{ laboratorio.unidade }}{% endif %}">
-                        <input class="form-control" placeholder="Andar" name="andar"
-                            value="{% if laboratorio.andar %}{{ laboratorio.andar }}{% endif %}">
-                        <input class="form-control" placeholder="Sala" name="sala"
-                            value="{% if laboratorio.sala %}{{ laboratorio.sala }}{% endif %}">
-        
-                        <input class="form-control" placeholder="Rua" name="rua"
-                            value="{% if laboratorio.rua %}{{ laboratorio.rua }}{% endif %}">
-                        <input class="form-control" placeholder="Número da rua" name="numero_rua"
-                            value="{% if laboratorio.numero_rua %}{{ laboratorio.numero_rua }}{% endif %}">
-                        <input class="form-control" placeholder="CEP" name="cep"
-                            value="{% if laboratorio.cep %}{{ laboratorio.cep }}{% endif %}">
-                        <input class="form-control" placeholder="Bairro" name="bairro"
-                            value="{% if laboratorio.bairro %}{{ laboratorio.bairro }}{% endif %}">
-
-                        <button id="botao_proximo_endereco" type="submit"
-                            class="btn btn-success float-right">Salvar Endereço</button>
-                    </div>
-                </section>
-            </div>
-        </form>
+  <div class="card rounded">
+    <div class="card-header">
+      <h2 class="text-center">Endereço</h2>
     </div>
-</body>
+    <div class="card-body">
+      <form
+        action="{% url 'editar_endereco' laboratorio_id=laboratorio.id %}"
+        id="formulario_autoridade"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        {% csrf_token %}
+
+        <div class="row">
+          <div class="mb-2 col-md-6 col-sm-12">
+            <label class="fw-bold" for="novo_nome_membro"
+              >Unidade acadêmica</label
+            >
+
+            <select class="form-control" name="unidade">
+              {% for u in unidade %}
+              <option value="{{u.0}}">{{u.0}} - {{u.1}}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2 col-md-6 col-sm-12">
+            <label class="fw-bold" for="novo_nome_membro">Andar</label>
+            <input
+              class="form-control"
+              name="andar"
+              value="{% if laboratorio.andar %}{{ laboratorio.andar }}{% endif %}"
+            />
+          </div>
+          <div class="mb-2 col-md-6 col-sm-12">
+            <label class="fw-bold" for="novo_nome_membro">Sala</label>
+            <input
+              class="form-control"
+              name="sala"
+              value="{% if laboratorio.sala %}{{ laboratorio.sala }}{% endif %}"
+            />
+          </div>
+          <div class="mb-2 col-md-6 col-sm-12">
+            <label class="fw-bold" for="novo_nome_membro">Rua</label>
+            <input
+              class="form-control"
+              name="rua"
+              value="{% if laboratorio.rua %}{{ laboratorio.rua }}{% endif %}"
+            />
+          </div>
+          <div class="mb-2 col-md-6 col-sm-12">
+            <label class="fw-bold" for="novo_nome_membro">Número da rua</label>
+            <input
+              class="form-control"
+              name="numero_rua"
+              value="{% if laboratorio.numero_rua %}{{ laboratorio.numero_rua }}{% endif %}"
+            />
+          </div>
+          <div class="mb-2 col-md-6 col-sm-12">
+            <label class="fw-bold" for="novo_nome_membro">CEP</label>
+            <input
+              class="form-control"
+              name="cep"
+              value="{% if laboratorio.cep %}{{ laboratorio.cep }}{% endif %}"
+            />
+          </div>
+          <div class="mb-2 col-md-6 col-sm-12">
+            <label class="fw-bold" for="novo_nome_membro">Bairro</label>
+            <input
+              class="form-control"
+              name="bairro"
+              value="{% if laboratorio.bairro %}{{ laboratorio.bairro }}{% endif %}"
+            />
+          </div>
+
+          <div class="col-sm-12">
+            <button
+              id="botao_proximo_endereco"
+              type="submit"
+              class="btn btn-success float-right"
+            >
+              Salvar Endereço
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

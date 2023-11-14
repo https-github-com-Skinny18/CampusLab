@@ -21,13 +21,28 @@ from django.http import FileResponse
 from django.core.files import File
 from .Send import Email
 from .planilha import export_to_excel
-
+from .forms import ExcluiRegimentoInternoForm, ProjetoForm
+import cx_Oracle
 import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 from django.http import HttpResponse
 import pandas as pd
 from openpyxl.styles import PatternFill
-from .models import Unidade, Laboratorio, Equipamento, RegimentoInterno  # Adicione outros modelos conforme necessário
+from .models import Unidade, Laboratorio, Equipamento, RegimentoInterno, Unidade 
+ # Adicione outros modelos conforme necessário
+
+
+
+from django.db import connections
+from .models import Projeto
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Projeto, Laboratorio
+from .forms import ProjetoForm
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
 
 
 def visualizar_pdf(request, unidade_academica_id):
@@ -77,6 +92,26 @@ def editar_regimentos_internos(request, laboratorio_id):
         'laboratorio': laboratorio,
         'regimentos_internos': regimentos_internos,
     })
+def excluir_regimento_interno(request, regimento_id):
+    print("View excluir_regimento_interno foi chamada.")
+    regimento = get_object_or_404(RegimentoInterno, id=regimento_id)
+
+    # Verifica se o método da solicitação é POST
+    if request.method == 'POST':
+        # Obtém os dados do formulário
+        form = ExcluiRegimentoInternoForm(request.POST)
+
+        # Valida os dados do formulário
+        if form.is_valid():
+            # Exclui o regimento interno
+            regimento.delete()
+
+            # Redireciona de volta para a página de edição de regimentos internos
+            return redirect('editar_regimentos_internos', laboratorio_id=regimento.laboratorio.id)
+
+    # Redireciona de volta para a página de edição de regimentos internos
+    return redirect('editar_regimentos_internos', laboratorio_id=regimento.laboratorio.id)
+
 
 def editar_unidades_academicas(request, laboratorio_id):
     laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
@@ -96,11 +131,13 @@ def editar_unidades_academicas(request, laboratorio_id):
 
 def visualizar_laboratorio(request, laboratorio_id):
     laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+    regimentos_internos = RegimentoInterno.objects.filter(laboratorio=laboratorio)
+    unidades_academicas = UnidadeAcademica.objects.filter(laboratorio=laboratorio)
 
     # Recupere todas as infraestruturas associadas a este laboratório
-    infraestruturas = LaboratorioInfraestrutura.objects.filter(laboratorio=laboratorio)
+    infraestruturas = Infraestrutura.objects.filter(laboratorio_id=laboratorio.id)
 
-    return render(request, 'view.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas})
+    return render(request, 'view.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas, 'regimentos_internos': regimentos_internos, 'unidades_academicas': unidades_academicas})
 
 
 def index(request):
@@ -143,16 +180,31 @@ def imagem_rgb(request, imagem_id):
 from django.db.models import Max
 
 def main(request):
-    laboratorios = Laboratorio.objects.annotate(max_imagem=Max('imagens__data_upload')).all()
 
+    texto = request.GET.get('filter')
+    lab_u = Laboratorio.objects.values('unidade').distinct()
     lab = Laboratorio.objects.all()
+    
+    if texto:
+        laboratorios = Laboratorio.objects.filter(
+            nome_laboratorio__icontains=texto 
+        )
+    else:
+
+        laboratorios = Laboratorio.objects.annotate(max_imagem=Max('imagens__data_upload')).all()
+    print(laboratorios)
+
+    paginator = Paginator(laboratorios, 6)  
+    page = request.GET.get('page')
+    laboratorios = paginator.get_page(page)
+
 
     context = {
+        'lab_u': lab_u,
         'lab': lab,
         'laboratorios': laboratorios,
     }
 
-    print("DEBUG: Laboratórios:", laboratorios)
 
     return render(request, 'main.html', context)
 
@@ -167,17 +219,17 @@ def salvar_laboratorio(request):
                 imagem_laboratorio.save()
                 imagens_salvas.append(imagem_laboratorio)
             
-            # if not imagens_lab:
-            #         # Caminho para a imagem padrão (ajuste o caminho conforme necessário)
-            #     caminho_imagem_padrao = '/uea-news/templates/static/images/generica.png'
+            if not imagens_lab:
+                    # Caminho para a imagem padrão (ajuste o caminho conforme necessário)
+                caminho_imagem_padrao = 'templates/static/images/generica.png'
                     
-            #     with open(caminho_imagem_padrao, 'rb') as img_padrao:
-            #             # Crie uma instância de ImagemLaboratorio com a imagem padrão
-            #          imagem_laboratorio = ImagemLaboratorio(imagem=File(img_padrao))
-            #          imagem_laboratorio.save()
+                with open(caminho_imagem_padrao, 'rb') as img_padrao:
+                        # Crie uma instância de ImagemLaboratorio com a imagem padrão
+                     imagem_laboratorio = ImagemLaboratorio(imagem=File(img_padrao))
+                     imagem_laboratorio.save()
                         
-            #             # Adicione a imagem padrão à lista de imagens
-            #          imagens_salvas.append(imagem_laboratorio)
+                        # Adicione a imagem padrão à lista de imagens
+                     imagens_salvas.append(imagem_laboratorio)
 
             nome_laboratorio = request.POST.get("nome_laboratorio")
             responsavel = request.POST.get("responsavel")
@@ -267,19 +319,13 @@ def salvar_laboratorio(request):
                 unidade_academica = UnidadeAcademica(laboratorio=laboratorio, pdf=pdf_unidade_academica)
                 unidade_academica.save()
          # Salvar as imagens no banco de dados (caso você tenha um modelo separado para imagens)
-            infraestrutura = Infraestrutura.objects.create(
-            equipamento=equipamento,
-            marca=marca,
-            modelo=modelo,
-            finalidade=finalidade,
-            )
-            
-            laboratorio.infraestrutura = infraestrutura
+          
             laboratorio.save()
 
             
             # Relacionar as imagens ao laboratório
             laboratorio.imagens.set(imagens_salvas)
+            u = Unidade.objects.all()
 
             if imagens_salvas:
                 return HttpResponseRedirect(reverse('editar_laboratorio', args=[laboratorio.id, imagens_salvas[0].id]))
@@ -317,7 +363,7 @@ def adicionar_grupo_de_pesquisa(request, laboratorio_id=None):
         laboratorio.grupos_de_pesquisa.add(grupo_de_pesquisa)
 
         # Redirecione para a página de edição do laboratório ou para onde for adequado
-        return redirect('editar_laboratorio', laboratorio.id, 0)
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
     grupos_de_pesquisa = laboratorio.grupos_de_pesquisa.all()
 
@@ -326,14 +372,53 @@ def adicionar_grupo_de_pesquisa(request, laboratorio_id=None):
         'adicionar_grupo_de_pesquisa.html',
         {'laboratorio': laboratorio, 'grupos_de_pesquisa': grupos_de_pesquisa}
     )
+
+def editar_grupo_de_pesquisa(request, grupo_de_pesquisa_id):
+    grupo_de_pesquisa = get_object_or_404(GrupoDePesquisa, id=grupo_de_pesquisa_id)
+    print( grupo_de_pesquisa)
+
+    if request.method == 'POST':
+        grupo_de_pesquisa_id = request.POST.get('grupo_de_pesquisa_id')  # Recupere o ID do grupo de pesquisa
+        nome_do_grupo = request.POST.get('nome_do_grupo')
+        area = request.POST.get('area')
+        link_grupo = request.POST.get('link_grupo')
+
+        # Verifique se o ID no formulário corresponde ao ID do grupo de pesquisa
+        if grupo_de_pesquisa_id == str(grupo_de_pesquisa.id):
+            # Atualize os valores do grupo de pesquisa
+            grupo_de_pesquisa.nome_do_grupo = nome_do_grupo
+            grupo_de_pesquisa.area = area
+            grupo_de_pesquisa.link_grupo = link_grupo
+            grupo_de_pesquisa.save()
+
+            # Redirecione de volta para a página original ou para onde for apropriado
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+    # Renderize a página de edição do grupo de pesquisa
+    return render(request, 'editar_grupo_de_pesquisa.html', {'grupo_de_pesquisa': grupo_de_pesquisa})
+
+
+# novo
+def excluir_grupo_de_pesquisa(request, grupo_de_pesquisa_id):
+    # Obtenha o grupo de pesquisa que você deseja excluir
+    grupo_de_pesquisa = get_object_or_404(GrupoDePesquisa, id=grupo_de_pesquisa_id)
+
+    # Lógica para excluir o grupo de pesquisa
+    grupo_de_pesquisa.delete()
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
     
 def editar_infraestrutura(request, laboratorio_id):
     laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
     marcas = Marca.objects.all()
     equipamentos = Equipamento.objects.all()
-    infraestruturas = laboratorio.infraestruturas.all()
 
-    if request.method == 'POST' and 'salvar_infraestrutura' in request.POST:
+
+    
+
+    # infraestruturas = laboratorio.infraestruturas.all()
+
+    if request.method == 'POST':
         equipamento_id = request.POST.get('equipamento')
         marca_id = request.POST.get('marca')
         modelo = request.POST.get('modelo')
@@ -346,12 +431,13 @@ def editar_infraestrutura(request, laboratorio_id):
         infraestrutura = Infraestrutura.objects.create(
             equipamento_id=equipamento_id,
             marca_id=marca_id,
+            laboratorio_id=laboratorio_id,
             modelo=modelo,
             finalidade=finalidade,
         )
 
         # Associe a nova infraestrutura ao laboratório atual
-        LaboratorioInfraestrutura.objects.create(laboratorio=laboratorio, infraestrutura=infraestrutura)
+        # LaboratorioInfraestrutura.objects.create(laboratorio=laboratorio, infraestrutura=infraestrutura)
 
         # Se uma nova imagem foi enviada, crie uma instância de ImagemInfraestrutura para cada imagem
         for nova_imagem in novas_imagens:
@@ -360,8 +446,8 @@ def editar_infraestrutura(request, laboratorio_id):
 
         print('Infraestrutura criada com sucesso!')
         # Redirecione para a página de edição do laboratório ou para onde for adequado
-        return HttpResponseRedirect(reverse('editar_laboratorio', args=[laboratorio.id, 0]))
-
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))    
+    infraestruturas = Infraestrutura.objects.filter(laboratorio_id=laboratorio_id)
     return render(
         request,
         'editar_infraestrutura.html',
@@ -497,6 +583,19 @@ def editar_laboratorio(request, laboratorio_id, imagem_id):
 def editar_endereco(request, laboratorio_id):
     laboratorio = get_object_or_404(Laboratorio, pk=laboratorio_id)
 
+    oracle_db_config = {
+        'user': 'iury',
+        'password': 'iury2023!',
+        'dsn': 'sgbd01.uea.br:1521/prouea',
+    }
+
+    connection = cx_Oracle.connect(**oracle_db_config)
+    cursor = connection.cursor()
+
+    u = f"SELECT * FROM XPROJ2.UNIDADE"
+    cursor.execute(u)
+    unidade = cursor.fetchall() 
+
     if request.method == 'POST':
         try:
             # Recupere os valores atualizados dos campos de endereço do formulário
@@ -530,9 +629,8 @@ def editar_endereco(request, laboratorio_id):
             # Trate qualquer exceção que possa ocorrer
             print('Erro:', str(e))
             messages.error(request, f'Erro ao atualizar o endereço: {str(e)}')
-
     # Renderize o template com os detalhes do laboratório e o formulário para edição de endereço
-    return render(request, 'editar_endereco.html', {'laboratorio': laboratorio})
+    return render(request, 'editar_endereco.html', {'laboratorio': laboratorio, 'unidade': unidade})
 
 
 def visualizar_membros_laboratorio(request, laboratorio_id):
@@ -557,18 +655,51 @@ def visualizar_membros_laboratorio(request, laboratorio_id):
         'visualizar_membros.html',
         {'laboratorio': laboratorio, 'membros': membros}
     )
+def editar_membro_laboratorio(request, membro_id):
+    membro = get_object_or_404(MembroLaboratorio, id=membro_id)
 
+    if request.method == 'POST':
+        # Obter os dados do formulário
+        nome_membro = request.POST.get('nome_membro')
+        funcao = request.POST.get('funcao')
+        curriculo_lattes = request.POST.get('curriculo_lattes')
+
+        # Atualizar as informações do membro
+        membro.nome_membro = nome_membro
+        membro.funcao = funcao
+        membro.curriculo_lattes = curriculo_lattes
+        membro.save()
+
+        # Redirecionar de volta para a página original
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+    return render(
+        request,
+        'editar_membro_laboratorio.html',
+        {'membro': membro}
+    )
+
+
+# novo
+def excluir_membro_laboratorio(request, membro_id):
+    membro = get_object_or_404(MembroLaboratorio, id=membro_id)
+    membro.delete()
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 def export_to_excel(request):
 
     if request.method == "POST":
-        unidade = request.POST.get('unidade')
+        unidade = request.POST.getlist('unidade')
         export_all = request.POST.get('export_all')
-        laboratorio = request.POST.get('laboratorios')
+        laboratorio = request.POST.getlist('laboratorios')
 
-
+       
         if unidade:
-            laboratorios = Laboratorio.objects.filter(unidade=unidade)
+            if len(unidade) == 1:
+                laboratorios = Laboratorio.objects.filter(unidade=unidade[0])
+            else:
+                laboratorios = Laboratorio.objects.filter(unidade__in=unidade)
+          
             equipamentos = Infraestrutura.objects.all()
             regimentos_internos = RegimentoInterno.objects.all()
 
@@ -578,28 +709,67 @@ def export_to_excel(request):
             regimentos_internos = RegimentoInterno.objects.all()
 
         if laboratorio:
-            laboratorios = Laboratorio.objects.filter(id=laboratorio)
-            equipamentos = Infraestrutura.objects.all()
+            laboratorios = Laboratorio.objects.filter(id__in=laboratorio)
+            equipamentos = Infraestrutura.objects.filter(laboratorio__in=laboratorios)
             regimentos_internos = RegimentoInterno.objects.all()
-        
-
 
     laboratorios_df = pd.DataFrame(list(laboratorios.values()))
-    regimentos_internos_df = pd.DataFrame(list(regimentos_internos.values()))
+    if regimentos_internos.exists():
+        regimentos_internos_df = pd.DataFrame(list(regimentos_internos.values()))
+    else:
+        regimentos_internos_df = pd.DataFrame()
+        
     equipamentos_df = pd.DataFrame(list(equipamentos.values()))
+    
+    # if 'laboratorio_id' in equipamentos_df.columns:
+    #     equipamentos_df = equipamentos_df.drop(columns=['laboratorio_id'])
 
-    # Verifique se 'laboratorio_id' existe em equipamentos_df
-    if 'laboratorio_id' in equipamentos_df.columns:
-        equipamentos_df = equipamentos_df.drop(columns=['laboratorio_id'])
-
-    # Combine os DataFrames
+    equipamentos_df['status'] = equipamentos_df['status'].apply(lambda x: 'Ativo' if x == 1 else 'Em Manutenção')
+    regimentos_internos_df['status_x'] = regimentos_internos_df['status'].apply(lambda x: 'Ativo' if x == 1 else 'Inativo')
+    equipamentos_df['marca_id'] = equipamentos_df['marca_id'].apply(lambda x: Marca.objects.get(id=x).nome_marca if Marca.objects.filter(id=x).exists() else 'Desconhecida') 
+    equipamentos_df['equipamento_id'] = equipamentos_df['equipamento_id'].apply(lambda x: Equipamento.objects.get(id=x).nome_equipamento if Equipamento.objects.filter(id=x).exists() else 'Desconhecida') 
+    
+    # combined_df = pd.merge(laboratorios_df, regimentos_internos_df, left_on='id', right_on='laboratorio_id', how='left')
+    # combined_df = pd.merge(combined_df, equipamentos_df, left_on='laboratorio_id', right_on='id', how='left')
     combined_df = pd.merge(laboratorios_df, regimentos_internos_df, left_on='id', right_on='laboratorio_id', how='left')
-    combined_df = pd.merge(combined_df, equipamentos_df, left_on='laboratorio_id', right_on='id', how='left')
 
-    # Reorganize pelo ID (ou outro campo desejado)
+    equipamentos_grouped = equipamentos_df.groupby('laboratorio_id').agg(list).reset_index()
+    combined_df = pd.merge(combined_df, equipamentos_grouped, left_on='laboratorio_id', right_on='laboratorio_id', how='left')
+
+    combined_df['equipamento_id'] = combined_df['equipamento_id'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+    combined_df['marca_id'] = combined_df['marca_id'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+    combined_df['modelo'] = combined_df['modelo'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+    combined_df['finalidade'] = combined_df['finalidade'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+    combined_df['status_y'] = combined_df['status_y'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+
+    column_name_mapping = {
+        'nome_laboratorio': 'LABORATÓRIO',
+        'responsavel': 'RESPONSAVEL',
+        'email': 'EMAIL',
+        'telefone': 'TELEFONE',
+        'unidade': 'UNIDADE',
+        'rua': 'RUA',
+        'numero_rua': 'NÚMERO',
+        'cep': 'CEP',
+        'bairro': 'BAIRRO',
+        'andar': 'ANDAR',
+        'sala': 'SALA',
+        'apresentacao': 'APRESENTAÇÃO',
+        'objetivos': 'OBJETIVOS',
+        'descricao': 'DESCRICAO',
+        'link_pnipe': 'LINK',
+        'ato_anexo': 'ANEXO',
+        'pdf': ' PDF',
+        'nome_do_pdf': 'NOME_PDF',
+        'status_y': 'STATUS_INFRA',
+        'status_x': 'STATUS_PDF',
+
+    }
+
+    combined_df = combined_df.rename(columns=column_name_mapping)
+
     combined_df = combined_df.sort_values(by='id')
 
-    # Remova as colunas 'id' e 'laboratorio_id'
     combined_df = combined_df.drop(columns=['id', 'laboratorio_id', 'id_x', 'id_y'])
 
     workbook = openpyxl.Workbook()
@@ -620,7 +790,17 @@ def export_to_excel(request):
         for col_idx, value in enumerate(row[1:], 1):
             cell = worksheet.cell(row=row_idx, column=col_idx, value=value)
             cell.fill = PatternFill(start_color=row_color, end_color=row_color, fill_type="solid")
-
+    for column in worksheet.columns:
+        max_length = 0
+        column = [cell for cell in column]
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
     response = HttpResponse(content_type='application/ms-excel')
     response['Content-Disposition'] = 'attachment; filename="laboratorios_data.xlsx"'
 
@@ -630,5 +810,254 @@ def export_to_excel(request):
     
 
 
+def delete_infra(request, laboratorio_id):
+
+    Infraestrutura.objects.filter(id=laboratorio_id).delete()
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
+def change_status(request, id):
+    try:
+        equipamento = Infraestrutura.objects.get(id=id)
+    except Infraestrutura.DoesNotExist:
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+    equipamento.status = not equipamento.status
+    equipamento.save()
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+def change_status_pdf(request, id):
+    try:
+        regimento = RegimentoInterno.objects.get(id=id)
+    except Infraestrutura.DoesNotExist:
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+    regimento.status = not regimento.status
+    regimento.save()
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+
+def projetos(request, laboratorio_id):
+    oracle_db_config = {
+        'user': 'iury',
+        'password': 'iury2023!',
+        'dsn': 'sgbd01.uea.br:1521/prouea',
+    }
+
+    connection = cx_Oracle.connect(**oracle_db_config)
+    cursor = connection.cursor()
+    cursor.execute('SELECT PROJETO, TITULO FROM XPROJ2.PROJETO')
+    resultados = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+    projetos = Projeto.objects.filter(laboratorio=laboratorio)
+
+    if request.method == 'POST':
+        mutable_post = request.POST.copy()
+        mutable_post['laboratorio'] = laboratorio_id
+        form = ProjetoForm(mutable_post)
+
+        if form.is_valid():
+            projeto = form.save(commit=False)
+            projeto.laboratorio = laboratorio
+            projeto.save()
+            return redirect('projetos', laboratorio_id=laboratorio_id)
+    else:
+        form = ProjetoForm(initial={'laboratorio': laboratorio_id, 'tem_cadastro_uea': True})
+
+    projetos = Projeto.objects.filter(laboratorio=laboratorio)
+
+    return render(request, 'projetos.html', {'form': form, 'projetos': projetos, 'laboratorio': laboratorio, 'resultados': resultados})
+
+
+def excluir_projeto(request, projeto_id):
+    projeto = get_object_or_404(Projeto, id=projeto_id)
+    laboratorio_id = projeto.laboratorio.id  # Obtém o laboratório associado ao projeto
+    projeto.delete()
+    return redirect('projetos', laboratorio_id=laboratorio_id)  # Redirecione de volta para a página de projetos após excluir
+
+
+def obter_nome_projeto(request):
+    projeto_selecionado = request.GET.get('projeto', '')
+    oracle_db_config = {
+        'user': 'iury',
+        'password': 'iury2023!',
+        'dsn': 'sgbd01.uea.br:1521/prouea',
+    }
+
+    connection = cx_Oracle.connect(**oracle_db_config)
+    cursor = connection.cursor()
+    query = f"SELECT TITULO FROM XPROJ2.PROJETO WHERE PROJETO = '{projeto_selecionado}'"
+    cursor.execute(query)
+    resultado = cursor.fetchone()
+    cursor.close()
+    connection.close()
+
+    nome_projeto = resultado[0] if resultado else ''
+    return JsonResponse({'nome_projeto': nome_projeto})
+
+@csrf_exempt
+def obter_detalhes_projeto(request):
+    projeto_selecionado = request.GET.get('projeto', '')
+    oracle_db_config = {
+        'user': 'iury',
+        'password': 'iury2023!',
+        'dsn': 'sgbd01.uea.br:1521/prouea',
+    }
+
+    connection = cx_Oracle.connect(**oracle_db_config)
+    cursor = connection.cursor()
+
+    # Consulta para obter o nome do projeto
+    query_projeto = f"SELECT TITULO, TIPO, AUTOR FROM XPROJ2.PROJETO WHERE PROJETO = '{projeto_selecionado}'"
+    cursor.execute(query_projeto)
+    resultado_projeto = cursor.fetchone()
+
+    # Consulta para obter o nome do docente associado ao projeto (autor)
+    nome_autor_projeto = resultado_projeto[2] if resultado_projeto and resultado_projeto[2] else ''
+
+    # Consulta para obter os discentes participantes associados ao projeto
+    query_discentes = f"SELECT MEMBRO FROM XPROJ2.PROJ_MEMBRO WHERE PROJETO = '{projeto_selecionado}' AND PERFIL IN ('BOL', 'VOL', 'MEM')"
+    cursor.execute(query_discentes)
+    resultados_matricula_discente = cursor.fetchall()
+
+    # Adiciona a lógica para verificar CPF na tabela EXTERNO
+    nomes_discentes = []
+    for resultado in resultados_matricula_discente:
+        matricula = str(resultado[0])
+        if len(matricula) == 14:
+            # Se a matrícula tem 14 dígitos, consulte a tabela EXTERNO
+            query_cpf_externo = f"SELECT NOME FROM XPROJ2.EXTERNO WHERE CPF = '{matricula}'"
+            cursor.execute(query_cpf_externo)
+            resultado_cpf_externo = cursor.fetchone()
+            if resultado_cpf_externo:
+                nomes_discentes.append(resultado_cpf_externo[0])
+            else:
+                nomes_discentes.append(matricula)
+        else:
+            nomes_discentes.append(matricula)
+
+    # Consulta para obter a modalidade
+    query_tipo_projeto = f"SELECT TIPO FROM XPROJ2.PROJETO WHERE PROJETO = '{projeto_selecionado}'"
+    cursor.execute(query_tipo_projeto)
+    resultado_tipo_projeto = cursor.fetchone()
+
+    # Se o tipo do projeto foi encontrado, continue para obter a modalidade
+    if resultado_tipo_projeto and resultado_tipo_projeto[0]:
+        tipo_projeto = resultado_tipo_projeto[0]
+
+        # Consulta para obter a modalidade usando o tipo
+        query_modalidade = f"SELECT NOME FROM XPROJ2.TIPO WHERE TIPO = '{tipo_projeto}'"
+        cursor.execute(query_modalidade)
+        resultado_modalidade = cursor.fetchone()
+
+        modalidade_projeto = resultado_modalidade[0] if resultado_modalidade else ''
+    else:
+        modalidade_projeto = ''
+
+    # Consulta para obter as matrículas dos discentes participantes
+    query_matricula_discente = f"SELECT MEMBRO FROM XPROJ2.PROJ_MEMBRO WHERE PROJETO = '{projeto_selecionado}' AND PERFIL IN ('BOL', 'VOL', 'MEM')"
+    cursor.execute(query_matricula_discente)
+    resultados_matricula_discente = cursor.fetchall()
+
+    # Modificação para extrair o primeiro elemento de cada tupla
+    matricula_discente = ', '.join(
+        str(resultado[0]) for resultado in resultados_matricula_discente) if resultados_matricula_discente else ''
+
+    # Consulta para obter o fomento
+    query_fomento = f"SELECT CATEGORIA FROM XPROJ2.PROJETO WHERE PROJETO = '{projeto_selecionado}'"
+    cursor.execute(query_fomento)
+    resultado_fomento = cursor.fetchone()
+
+    # Verificação adicional para lidar com None e converter números para string
+    fomento_projeto = str(resultado_fomento[0]) if (
+            resultado_fomento and resultado_fomento[0] is not None) else 'Fomento não encontrado no banco de dados.'
+
+    # Adicione esta linha para verificar o valor atribuído
+    print('Valor de fomento_projeto:', fomento_projeto)
+
+    cursor.close()
+    connection.close()
+
+    nome_projeto = resultado_projeto[0] if resultado_projeto else ''
+
+    # Retorna a resposta JSON com as novas linhas adicionadas
+    return JsonResponse({
+        'nome_projeto': nome_projeto,
+        'nome_autor_projeto': nome_autor_projeto,
+        'nomes_discentes': nomes_discentes,
+        'modalidade_projeto': modalidade_projeto,
+        'matricula_discente': matricula_discente,
+        'fomento_projeto': fomento_projeto
+    })
+
+
+
+def obter_vigencia_projeto(request):
+    projeto_selecionado = request.GET.get('projeto', '')
+    oracle_db_config = {
+        'user': 'iury',
+        'password': 'iury2023!',
+        'dsn': 'sgbd01.uea.br:1521/prouea',
+    }
+
+    connection = cx_Oracle.connect(**oracle_db_config)
+    cursor = connection.cursor()
+
+    # Consulta para obter a data de início e término do projeto
+    query_vigencia = f"SELECT VIG_DT_INICIO, VIG_DT_TERMINO FROM XPROJ2.PROJETO WHERE PROJETO = '{projeto_selecionado}'"
+    cursor.execute(query_vigencia)
+    resultado_vigencia = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    vigencia_inicio = resultado_vigencia[0].strftime('%Y-%m-%d') if resultado_vigencia and resultado_vigencia[0] else ''
+    vigencia_fim = resultado_vigencia[1].strftime('%Y-%m-%d') if resultado_vigencia and resultado_vigencia[1] else ''
+
+    return JsonResponse({'vigencia_inicio': vigencia_inicio, 'vigencia_fim': vigencia_fim})
+
+
+
+def obter_modalidade_projeto(request):
+    projeto_selecionado = request.GET.get('projeto', '')
+    oracle_db_config = {
+        'user': 'iury',
+        'password': 'iury2023!',
+        'dsn': 'sgbd01.uea.br:1521/prouea',
+    }
+
+    connection = cx_Oracle.connect(**oracle_db_config)
+    cursor = connection.cursor()
+
+    # Consulta para obter o tipo do projeto
+    query_tipo_projeto = f"SELECT TIPO FROM XPROJ2.PROJETO WHERE PROJETO = '{projeto_selecionado}'"
+    cursor.execute(query_tipo_projeto)
+    resultado_tipo_projeto = cursor.fetchone()
+
+    print(f"Resultado Tipo Projeto: {resultado_tipo_projeto}")  # Adiciona este log
+
+    # Se o tipo do projeto foi encontrado, continue para obter a modalidade
+    if resultado_tipo_projeto and resultado_tipo_projeto[0]:
+        tipo_projeto = resultado_tipo_projeto[0]
+
+        # Consulta para obter a modalidade usando o tipo
+        query_modalidade = f"SELECT NOME FROM XPROJ2.TIPO WHERE TIPO = '{tipo_projeto}'"
+        cursor.execute(query_modalidade)
+        resultado_modalidade = cursor.fetchone()
+
+        print(f"Resultado Modalidade: {resultado_modalidade}")  # Adiciona este log
+
+        modalidade = resultado_modalidade[0] if resultado_modalidade else ''
+    else:
+        modalidade = ''
+
+    cursor.close()
+    connection.close()
+
+    return JsonResponse({'modalidade': modalidade})

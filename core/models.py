@@ -14,6 +14,7 @@ class RegimentoInterno(models.Model):
     laboratorio = models.ForeignKey('Laboratorio', on_delete=models.CASCADE, related_name='regimentos_internos')
     pdf = models.FileField(upload_to='pdf_regimentos_internos/')
     nome_do_pdf = models.CharField(max_length=255, default="pedro")
+    status = models.BooleanField(default=True)  
     
     def __str__(self):
         return f'Regimento Interno {self.id}'
@@ -85,6 +86,7 @@ class Infraestrutura(models.Model):
     marca = models.ForeignKey(Marca, on_delete=models.CASCADE, null=True, related_name='infraestrutura_marca', verbose_name='Nome da Marca lista')
     modelo = models.CharField(null=True, max_length=30, verbose_name='modelo do equipamento')
     finalidade = models.CharField(null=True, max_length=300, verbose_name='finalidade do equipamento')
+    status = models.BooleanField(default=True)  
 
 class ImagemInfraestrutura(models.Model):
     imagem = models.ImageField(upload_to='infraestrutura_images/', null=True, blank=True, verbose_name='Imagem da Infraestrutura')
@@ -104,6 +106,20 @@ class LaboratorioInfraestrutura(models.Model):
     infraestrutura = models.ForeignKey(Infraestrutura, on_delete=models.CASCADE)
 
 
+class Projeto(models.Model):
+    projeto = models.CharField(max_length=255, default=1)
+    nome_projeto = models.CharField(max_length=255)
+    docente_responsavel = models.CharField(max_length=255)
+    discente_participante = models.CharField(max_length=255)
+    matricula_discente = models.CharField(max_length=50, blank=True, null=True)  # Permite valores nulos
+    modalidade = models.CharField(max_length=100)
+    vigencia_inicio = models.DateField()
+    vigencia_fim = models.DateField()
+    fomento = models.CharField(max_length=100)
+    laboratorio = models.ForeignKey('Laboratorio', on_delete=models.CASCADE, default=1, related_name='projetos_lab')
+
+    def __str__(self):
+        return self.projeto
 
    
 

@@ -1,43 +1,50 @@
-
-{% block content %}
 {% load static %}
 {% include 'parciais/head.html' %}
-<body>
-    {% include 'parciais/navbar.html' %}
-  <div class="container mt-4">
-    {% include 'parciais/ferramentas.html' %}
-    <h1 class="mb-4">Gerenciar Unidades Acadêmicas</h1>
+{% include 'parciais/navbar.html' %}
+{% include 'parciais/ferramentas.html' %}
 
-    {% if unidades_academicas %}
-      <h2>Unidade Acadêmica:</h2>
+<div class="container p-2">
+  <div class="card">
+
+    <div class="card-header">
+      <h2>Gerenciar Unidades Acadêmicas</h2>
+    </div>
+
+    <div class="card-body">
+
+      {% if unidades_academicas %}
+      <h3>Ato Gerador:</h3>
+
       <ul class="list-group mb-4">
         {% for unidade_academica in unidades_academicas %}
-          <li class="list-group-item">
-            <a href="{% url 'visualizar_pdf' unidade_academica.id %}" class="btn btn-sm btn-link" target="_blank">
-              <i class="fa fa-file-pdf-o"></i> Visualizar PDF
+        <li class="list-group-item">
+          <a href="{% url 'visualizar_pdf' unidade_academica.id %}" class="btn btn-sm btn-link" target="_blank">
+            <i class="fa fa-file-pdf-o"></i> Visualizar PDF
           </a>
-            {{ unidade_academica }}
-            <form method="post" enctype="multipart/form-data" class="d-inline">
-              {% csrf_token %}
+          {{ unidade_academica }}
+
+          <form method="post" enctype="multipart/form-data" class="d-inline">
+            {% csrf_token %}
+
+            <div class="mb-3">
               <input type="hidden" name="unidade_academica_id" value="{{ unidade_academica.id }}">
-              <input type="file" name="unidade_academica_pdf" accept=".pdf" class="form-control-file">
-              <button type="submit" class="btn btn-sm btn-primary mt-2">Substituir PDF</button>
-            </form>
-            <form method="post" class="d-inline">
-              {% csrf_token %}
-              <input type="hidden" name="unidade_academica_id" value="{{ unidade_academica.id }}">
-              <button type="submit" class="btn btn-sm btn-danger mt-2">Excluir PDF</button>
-            </form>
-          </li>
+              <input class="form-control" type="file" id="formFile" accept=".pdf" name="unidade_academica_pdf">
+            </div>
+          </form>
+
+
+        </li>
         {% endfor %}
       </ul>
-    {% else %}
+      <button class="btn btn-primary">Enviar Ato Gerador</button>
+      {% else %}
       <h3>Adicionar Unidade Acadêmica:</h3>
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="file" name="unidade_academica_pdf" accept=".pdf" class="form-control-file">
         <button type="submit" class="btn btn-primary mt-2">Enviar Unidade Acadêmica</button>
       </form>
-    {% endif %}
+      {% endif %}
+    </div>
   </div>
-{% endblock %}
+</div>

@@ -1,75 +1,58 @@
 {% load static %}
 
 <header>
-    <nav class="navbar navbar-expand-lg  navbar-light ">
-
-        <div class="container-fluid">
-
-
-            <a class="navbar-brand" href="/main"> 
-                <img id="logo" src="{% static 'images/logobrancouea.png' %}" alt="##">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-rs">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/main">
+        <img id="logo" src="{% static 'images/logobrancouea.png' %}" alt="##" class="img-fluid logo-size">
+      </a>
+      <button class="navbar-toggler" type="button" data-mdb-toggle="collapse"
+        data-mdb-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+        aria-label="Toggle navigation">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <form class="me-3">
+          <div class="form-white input-group" style="width: 250px;">
+            <input type="search" class="form-control rounded" placeholder="Pesquisar " aria-label="Search" aria-describedby="search-addon" name="filter" />
+            <button type="submit" class="btn btn-secondary">Pesquisar</button>
+          </div>
+        </form>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="/edit/">Criar Laboratorio</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/main">Visualizar Laboratorio</a>
+          </li>
+        </ul>
+        <ul class="navbar-nav d-flex flex-row ms-auto me-3">
+          <li class="nav-item me-3 me-lg-0 dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              <i class="fa fa-door-open fa-2x " aria-hidden="true"></i> <!-- Ícone de porta -->
             </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-                aria-label="Toggle navigation">
-                <i class="bi-list"> </i>
-            </button>
-
-            <div class="collapse navbar-collapse d-flex justify-content-end" id="navbarSupportedContent">
-                <ul class="navbar-nav nav justify-content-center">
-    
-                    <!-- <li class="nav-item">
-                        <a class="nav-link m-2" href="/aprovados/">Aprovados</a>
-                    </li> -->
-                    <li class="nav-item">
-                        <a class="nav-link m-2" href="/edit/">Criar Laboratorio</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link m-2" href="/main">Visualizar Laboratorio</a>
-                    </li>
-                    <!-- <li class="nav-item">
-                        <a class="nav-link m-2" href="/pendentes/">Pendentes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link m-2" href="/revisao/">Revisão</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link m-2" href="/cancelados">Cancelados</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link m-2" href="/boletins_salvos">Boletins Salvos</a>
-                    </li> -->
-                </ul>
-
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-perfil">
-                        <i class="bi bi-door-closed-fill" id="user"></i>
-                    </button>
-                    <ul class="dropdown-menu ">
-                        <li><a class="dropdown-item" href="{% url 'deslogar' %}">Sair</a></li>
-                    </ul>
-                </div>   
-            </div>
-        </div>
-    </nav>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Obtém o caminho da página atual
-            var currentPage = window.location.pathname;
-    
-            // Obtém todos os links da navbar
-            var navLinks = document.querySelectorAll('.nav-item a');
-    
-            // Itera sobre cada link na navbar
-            navLinks.forEach(function (link) {
-                var linkPath = link.getAttribute('href');
-    
-                // Verifica se o link corresponde à página atual
-                if (linkPath === currentPage) {
-                    link.classList.add('active'); // Adiciona a classe .active ao link correspondente
-                }
-            });
-        });
-    </script>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown1">
+              <li>
+                <a class="dropdown-item" href="{% url 'deslogar' %}">Sair</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <!-- Navbar -->
 </header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const button = document.querySelector('.navbar-toggler');
+    const navbar = document.querySelector('#navbarSupportedContent');
+  
+    button.addEventListener('click', function() {
+      navbar.classList.toggle('show'); // Adicione ou remova a classe 'show' para expandir ou recolher a barra de navegação
+    });
+  });
+</script>

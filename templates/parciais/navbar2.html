@@ -1,0 +1,60 @@
+{% load static %}
+
+<header>
+    <nav class="navbar navbar-expand-md navbar-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/main">
+                <img id="logo" src="{% static 'images/logobrancouea.png' %}" alt="##" class="img-fluid">
+            </a>
+
+
+            <div class="collapse navbar-collapse d-flex justify-content-end" id="navbarSupportedContent">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link m-2" href="/edit/">Criar Laboratorio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link m-2" href="/main">Visualizar Laboratorio</a>
+                    </li>
+                </ul>
+
+
+
+
+                
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle navbar-iconn " href="#" id="dropdown-perfil" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="bi bi-door-closed-fill navbar-iconn" id="user"></i>
+
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'deslogar' %}">Sair</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Obtém o caminho da página atual
+        var currentPage = window.location.pathname;
+
+        // Obtém todos os links da navbar
+        var navLinks = document.querySelectorAll('.nav-item a');
+
+        // Itera sobre cada link na navbar
+        navLinks.forEach(function (link) {
+            var linkPath = link.getAttribute('href');
+
+            // Verifica se o link corresponde à página atual
+            if (linkPath === currentPage) {
+                link.classList.add('active'); // Adiciona a classe .active ao link correspondente
+            }
+        });
+    });
+</script>

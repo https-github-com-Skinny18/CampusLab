@@ -11,6 +11,9 @@ from .views import editar_laboratorio
 from .views import visualizar_pdf
 from .views import imagem_rgb
 from .views import visualizar_membros_laboratorio
+
+from .views import excluir_regimento_interno
+from .views import editar_grupo_de_pesquisa
 from . import views
 from core import  views
 from django.contrib.auth.decorators import login_required
@@ -45,6 +48,21 @@ urlpatterns = [
     path('visualizar_membros_laboratorio/<int:laboratorio_id>/', views.visualizar_membros_laboratorio, name='visualizar_membros_laboratorio'),
     path('editar_laboratorio/<int:laboratorio_id>/<int:imagem_id>/', views.editar_laboratorio, name='editar_laboratorio'),
     path('export-to-excel/', views.export_to_excel, name='export_to_excel'),
+    path('delete_infra/<int:laboratorio_id>/', views.delete_infra, name='delete_infra'),
+    path('change_status/<int:id>/', views.change_status, name='change_status'),
+    path('change_status_pdf/<int:id>/', views.change_status_pdf, name='change_status_pdf'),
+
+    path('excluir_regimento_interno/<int:regimento_id>/', views.excluir_regimento_interno, name='excluir_regimento_interno'),
+    path('editar_grupo_de_pesquisa/<int:grupo_de_pesquisa_id>/', views.editar_grupo_de_pesquisa, name='editar_grupo_de_pesquisa'),
+    path('excluir_grupo_de_pesquisa/<int:grupo_de_pesquisa_id>/', views.excluir_grupo_de_pesquisa, name='excluir_grupo_de_pesquisa'),
+    path('editar-membro-laboratorio/<int:membro_id>/', views.editar_membro_laboratorio, name='editar_membro_laboratorio'),
+    path('excluir-membro-laboratorio/<int:membro_id>/', views.excluir_membro_laboratorio, name='excluir_membro_laboratorio'),
+    path('projetos/<int:laboratorio_id>/', views.projetos, name='projetos'),
+    path('projetos/excluir/<int:projeto_id>/', views.excluir_projeto, name='excluir_projeto'),
+    path('obter_nome_projeto/', views.obter_nome_projeto, name='obter_nome_projeto'),
+    path('obter_detalhes_projeto/', views.obter_detalhes_projeto, name='obter_detalhes_projeto'),
+    path('obter_vigencia_projeto/', views.obter_vigencia_projeto, name='obter_vigencia_projeto'),
+    path('obter_modalidade_projeto/', views.obter_modalidade_projeto, name='obter_modalidade_projeto'),
 ]
 
 

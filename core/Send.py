@@ -15,7 +15,7 @@ def Email(email, nome_laboratorio, responsavel):
         destinatarios = email
         mensagem = MIMEMultipart()
 
-        with open('uea-news/templates/static/images/logo_email.png', 'rb') as img_file:
+        with open('templates/static/images/logo_email.png', 'rb') as img_file:
             imagem = MIMEImage(img_file.read())
             imagem.add_header('Content-ID', '<logo>')
             mensagem.attach(imagem)

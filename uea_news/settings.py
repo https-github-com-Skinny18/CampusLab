@@ -88,36 +88,31 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-        # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        # 'NAME': 'lab',
-        # 'USER': 'postgres',
-        # 'PASSWORD': '24681632',
-        # 'HOST': 'localhost',
-        # 'PORT': '',
     },
-
-    # 'prouea': {
-    #     'ENGINE': 'django.db.backends.oracle',
-    #     'NAME': 'prouea',
-    #     'USER': 'iury',
-    #     'PASSWORD': 'iury2023!',
-    #     'HOST': '10.70.0.14',
-    #     'PORT': '1521',
-    #     'OPTIONS': {
-    #         'threaded': True,
-    #     },
-    # },
+    'prouea': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'prouea',
+        'USER': 'iury',
+        'PASSWORD': 'iury2023!',
+        'HOST': 'sgbd01.uea.br',
+        'PORT': '1521',
+        'OPTIONS': {
+            'threaded': True,
+            'service_name': 'prouea',  # Use service_name em vez de SID
+        }
+    },
+    'prouea2': {
+        'ENGINE': 'django.db.backends.oracle',
+        'NAME': 'prouea2',
+        'USER': 'cons_oberon',
+        'PASSWORD': 'pwdconsoberon',
+        'HOST': '10.70.0.14',
+        'PORT': '1521',
+        'OPTIONS': {
+            'threaded': True,
+        }
+    }
 }
-
-# 'default': {0
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'ueanews',
-#         'USER': 'ueanews',
-#         'PASSWORD': 'ueanews',
-#         'HOST': '172.10.0.59',
-#         'PORT': '5432',
-        
-#     }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

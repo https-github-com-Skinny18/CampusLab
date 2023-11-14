@@ -1,64 +1,141 @@
 {% load static %}
-
 {% include 'parciais/head.html' %}
+{% include 'parciais/navbar.html' %}
+{% include 'parciais/ferramentas.html' %}
 
-<body>
-    {% include 'parciais/navbar.html' %}
-
-    <div class="container">
-        {% include 'parciais/ferramentas.html' %}
-
-        <div class="card mt-4">
-            <div class="card-header">
-                <div class="d-flex justify-content-between">
-                    <h3>Membros do Laboratório</h3>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 col-sm-12">
+            <div class="card rounded">
+                <div class="card-header">
+                    <h2 class="text-center">Membros do Laboratório</h2>
                 </div>
-            </div>
-            <div class="card-body">
-                {% if membros %}
-                    <ul>
+
+                <div class="card-body m-2">
+                    {% if membros %}
+                    <ul class="list-group">
                         {% for membro in membros %}
-                            <li>
-                                <p class="card-title">Nome do Membro: {{ membro.nome_membro }}</p>
-                                <p class="card-title">Função: {{ membro.funcao }}</p>
-                                <p class="card-title">Currículo Lattes: <a href="{{ membro.curriculo_lattes }}" target="_blank">{{ membro.curriculo_lattes }}</a></p>
-                                <!-- Outras informações do membro, se houver -->
-                            </li>
+                        <li class="list-group-item border rounded-0 p-2 mb-1">
+                            <p class="m-0 mt-1"><span class="card-title"> Nome do Membro:</span> {{ membro.nome_membro}}
+                            </p>
+                            <p class="m-0 mt-1"><span class="card-title"> Função:</span> {{ membro.funcao }}</p>
+                            <p class="m-0 mt-1"><span class="card-title"> Currículo Lattes:</span> <a
+                                    href="{{ membro.curriculo_lattes }}" target="_blank">{{membro.curriculo_lattes}}</a></p>
+
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-primary editar-membro"
+                                    data-bs-target="#modal-editar-membro" data-bs-toggle="modal">Editar</button>
+
+                                <form method="POST" action="{% url 'excluir_membro_laboratorio' membro.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                </form>
+                            </div>
+                        </li>
                         {% endfor %}
                     </ul>
-                {% else %}
+                    {% else %}
                     <p>Nenhum membro encontrado para este laboratório.</p>
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
         </div>
-        <form method="POST">
-            {% csrf_token %}
-            
-            <!-- Campos para adicionar novo membro -->
-            <div class="form-group">
-                <label for="novo_nome_membro">Nome do Membro</label>
-                <input type="text" class="form-control" id="novo_nome_membro" name="nome_membro" required>
+
+        <div class="col-md-4 col-sm-12">
+            <div class="card rounded">
+                <div class="card-header">
+                    <h2 class="text-center">Adicionar Membro</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="fw-bold" for="novo_nome_membro">Nome do Membro</label>
+                                <input type="text" class="form-control shadow-sm" id="novo_nome_membro" name="nome_membro"
+                                    required>
+                            </div>
+                            <div class="col-12">
+                                <label class="fw-bold mt-3" for="nova_funcao">Função</label>
+                                <select class="form-control shadow-sm" id="nova_funcao" name="funcao" required>
+                                    <option value="">Escolha uma função</option>
+                                    <option value="Técnico">Técnico</option>
+                                    <option value="Discente">Discente</option>
+                                    <option value="Docente">Docente</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="fw-bold mt-3" for="novo_curriculo_lattes">Currículo Lattes (URL)</label>
+                                <input type="url" class="form-control shadow-sm" id="novo_curriculo_lattes"
+                                    name="curriculo_lattes">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary mt-3" name="adicionar_membro">Adicionar
+                                    Membro</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="nova_funcao">Função</label>
-                <select class="form-control" id="nova_funcao" name="funcao" required>
-                    <option value="">Escolha uma função</option>
-                    <option value="Técnico">Técnico</option>
-                    <option value="Discente">Discente</option>
-                    <option value="Docente">Docente</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="novo_curriculo_lattes">Currículo Lattes (URL)</label>
-                <input type="url" class="form-control" id="novo_curriculo_lattes" name="curriculo_lattes">
-            </div>
-            
-            
-            <!-- Adicione aqui outros campos relevantes para o membro -->
-            
-            <button type="submit" class="btn btn-primary mt-4" name="adicionar_membro">Adicionar Membro</button>
-        </form>
-        <!-- Adicione aqui um formulário para adicionar novos membros, se necessário -->
+        </div>
     </div>
+</div>
+
+
+
+
+{% for membro in membros %}
+<div class="modal fade" id="modal-editar-membro" tabindex="-1" role="dialog"
+    aria-labelledby="editarMembroLabel{{ membro.id }}" aria-hidden="true">
+
+
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarMembroLabel{{ membro.id }}">Editar Membro do Laboratório</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário de edição das informações do membro do laboratório -->
+                <form method="POST" action="{% url 'editar_membro_laboratorio' membro.id %}"
+                    enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Campos para editar as informações do membro -->
+                    <div class="form-group">
+                        <label for="nome_membro{{ membro.id }}">Nome do Membro</label>
+                        <input type="text" class="form-control" id="nome_membro{{ membro.id }}" name="nome_membro"
+                            value="{{ membro.nome_membro }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="funcao{{ membro.id }}">Função</label>
+                        <select class="form-control" id="funcao{{ membro.id }}" name="funcao" required>
+                            <option value="Técnico" {% if membro.funcao == "Técnico" %}selected{% endif %}>Técnico
+                            </option>
+                            <option value="Discente" {% if membro.funcao == "Discente" %}selected{% endif %}>Discente
+                            </option>
+                            <option value="Docente" {% if membro.funcao == "Docente" %}selected{% endif %}>Docente
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="curriculo_lattes{{ membro.id }}">Currículo Lattes (URL)</label>
+                        <input type="url" class="form-control" id="curriculo_lattes{{ membro.id }}"
+                            name="curriculo_lattes" value="{{ membro.curriculo_lattes }}">
+                    </div>
+
+                    <!-- Botão para salvar as edições -->
+                    <button type="submit" class="btn btn-primary" name="salvar_edicao_membro">Salvar Edições</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
 </body>
+
 </html>
