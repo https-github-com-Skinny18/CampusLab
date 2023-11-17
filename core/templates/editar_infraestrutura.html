@@ -22,7 +22,10 @@
             <th>Marca</th>
             <th>Modelo</th>
             <th>Finalidade</th>
+            <th>Tombo</th>
+            <th>Quantidade</th>
             <th>Ações</th>
+
           </tr>
         </thead>
         {% for laboratorio_infraestrutura in infraestruturas %}
@@ -46,6 +49,8 @@
             <td>{{ laboratorio_infraestrutura.marca.nome_marca }}</td>
             <td>{{ laboratorio_infraestrutura.modelo }}</td>
             <td>{{ laboratorio_infraestrutura.finalidade|default_if_none:'' }}</td>
+            <td>{{laboratorio_infraestrutura.tombo}}</td>
+            <td>{{laboratorio_infraestrutura.quantidade}}</td>
             <td class="d-flex">
 
               <button type="button" class="btn btn-primary" data-bs-toggle="modal"
@@ -110,6 +115,16 @@
         <div class="col-md-6 col-sm-12">
           <label for="nova_finalidade" class="mt-3 fw-bold">Finalidade:</label>
           <input type="text" id="nova_finalidade" name="finalidade" class="form-control shadow-sm">
+        </div>
+
+        <div class="col-md-6 col-sm-12">
+          <label for="tombo" class="mt-3 fw-bold">Tombo:</label>
+          <input type="text" id="tombo" name="tombo" class="form-control shadow-sm">
+        </div>
+
+        <div class="col-md-6 col-sm-12">
+          <label for="quantidade" class="mt-3 fw-bold">Quantidade:</label>
+          <input type="number" id="quabtidade" name="quantidade" class="form-control shadow-sm">
         </div>
 
         <div class="col-md-6 col-sm-12">

@@ -87,6 +87,8 @@ class Infraestrutura(models.Model):
     modelo = models.CharField(null=True, max_length=30, verbose_name='modelo do equipamento')
     finalidade = models.CharField(null=True, max_length=300, verbose_name='finalidade do equipamento')
     status = models.BooleanField(default=True)  
+    tombo =  models.CharField(null=True,default='-', max_length=300, verbose_name='tombo')
+    quantidade = models.PositiveIntegerField(default=0)
 
 class ImagemInfraestrutura(models.Model):
     imagem = models.ImageField(upload_to='infraestrutura_images/', null=True, blank=True, verbose_name='Imagem da Infraestrutura')

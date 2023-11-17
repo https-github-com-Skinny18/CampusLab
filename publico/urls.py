@@ -2,12 +2,11 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import path,include
 from django.conf.urls.static import static 
+from . import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('core.urls')),
-    path('autenticacao/', include('autenticacao.urls')),
-    path('publico/', include('publico.urls')),
+    path('geral/', views.geral , name='geral'),
+    path('view/<int:laboratorio_id>/', views.view, name='view')
 ]
 # if settings.DEBUG:
 urlpatterns += static(

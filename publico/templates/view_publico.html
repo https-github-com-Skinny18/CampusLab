@@ -2,8 +2,34 @@
 {% include 'parciais/head.html' %}
 
 <body>
-   {% include 'parciais/navbar.html'%}
-   <div class="container">
+    {% load static %}
+
+    <header>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-rs">
+          <div class="container-fluid">
+            <a class="navbar-brand" href="/main">
+              <img id="logo" src="{% static 'images/logobrancouea.png' %}" alt="##" class="img-fluid logo-size">
+            </a>
+            <button class="navbar-toggler" type="button" data-mdb-toggle="collapse"
+              data-mdb-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+              aria-label="Toggle navigation">
+              <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <form class="me-3">
+                <div class="form-white input-group" style="width: 250px;">
+                  <input type="search" class="form-control rounded" placeholder="Pesquisar " aria-label="Search" aria-describedby="search-addon" name="filter" />
+                  <button type="submit" class="btn btn-secondary">Pesquisar</button>
+                </div>
+              </form>
+            
+            </div>
+          </div>
+        </nav>
+      </header> 
+      
+    <div class="container">
 
       <div class="row">
          <div class="col-md-7">
@@ -13,8 +39,6 @@
                   <div class="d-flex justify-content-between">
                      <h3>Informações do Laboratorio</h3>
       
-                     <a href="{% url 'editar_laboratorio' laboratorio_id=laboratorio.id imagem_id=0 %}"
-                        class="ml-2 btn btn-primary">Editar Laboratório <i class="bi bi-pen"></i></a>
                   </div>
                </div>
       
@@ -26,6 +50,7 @@
                <div class="card-body">
                 
       
+                    
                   <div id="carouselExampleIndicators" class="carousel slide w-100" data-bs-ride="carousel">
                      <div class="carousel-indicators">
                        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
@@ -50,7 +75,6 @@
                        <span class="visually-hidden">Next</span>
                      </button>
                    </div>
-                   
                      <div class="row mt-2">
                         <div class="col-md-6">
       
@@ -76,70 +100,70 @@
                      <!-- Adicione aqui outras informações relevantes da infraestrutura -->
                   </div>
                </div>
-            
-            <div class="card mt-4">
 
-               <div class="card-header">
-                  <div class="d-flex justify-content-between">
-                     <h3>Informações de Infraestrutura</h3>
-                        </div>
-               </div>
-     
-               <div class="card-body">
-      
-                    {% if infraestruturas %}
-                       <table class="table  table-striped table-hover">
-                                  <thead>
-                                    <tr>
-                                       <th>Status</th>
-                                       <th>Equipamento</th>
-                                       <th>Marca</th>
-                                       <th>Modelo</th>
-                                       <th>Finalidade</th>
-                                       <th>Tombo</th>
-                                       <th>Quantidade</th>
+               <div class="card mt-4">
 
-                                    </tr>
-                                  </thead>
-                                  {% for laboratorio_infraestrutura in infraestruturas %}
-      
-                                  <tbody>
-                                    <tr>
-      
-                                      <td>
-                                      {% if laboratorio_infraestrutura.status == True %}
-                                          <div class="status  bg-warning rounded-circle" >
-      
-                                          </div>
-                                          {% endif %}
-                                          {% if laboratorio_infraestrutura.status == False %}
-                                          <div class="status  bg-warning-2 rounded-circle" >
-                                
-                                          </div>
-                                          {% endif %}
-                                      </td>
-                                      <td>{{ laboratorio_infraestrutura.equipamento.nome_equipamento}}</td>
-                                      <td>{{ laboratorio_infraestrutura.marca.nome_marca }}</td>
-                                      <td>{{ laboratorio_infraestrutura.modelo }}</td>
-                                      <td>{{ laboratorio_infraestrutura.finalidade|default_if_none:'' }}</td>
-                                      <td>{{laboratorio_infraestrutura.tombo}}</td>
-                                      <td>{{laboratorio_infraestrutura.quantidade}}</td>
-      
-                                    </tr>
-                                  </tbody>
-                                  {% endfor %}
-      
-                                </table>
-                    {% else %}
-                      <p>Nenhuma infraestrutura encontrada para este laboratório.</p>
-                    {% endif %}
-      
-                     <!-- Adicione aqui outras informações relevantes da infraestrutura -->
+                  <div class="card-header">
+                     <div class="d-flex justify-content-between">
+                        <h3>Informações de Infraestrutura</h3>
+                           </div>
                   </div>
+        
+                  <div class="card-body">
+         
+                       {% if infraestruturas %}
+                          <table class="table  table-striped table-hover">
+                                     <thead>
+                                       <tr>
+                                          <th>Status</th>
+                                          <th>Equipamento</th>
+                                          <th>Marca</th>
+                                          <th>Modelo</th>
+                                          <th>Finalidade</th>
+                                          <th>Tombo</th>
+                                          <th>Quantidade</th>
+   
+                                       </tr>
+                                     </thead>
+                                     {% for laboratorio_infraestrutura in infraestruturas %}
+         
+                                     <tbody>
+                                       <tr>
+         
+                                         <td>
+                                         {% if laboratorio_infraestrutura.status == True %}
+                                             <div class="status  bg-warning rounded-circle" >
+         
+                                             </div>
+                                             {% endif %}
+                                             {% if laboratorio_infraestrutura.status == False %}
+                                             <div class="status  bg-warning-2 rounded-circle" >
+                                   
+                                             </div>
+                                             {% endif %}
+                                         </td>
+                                         <td>{{ laboratorio_infraestrutura.equipamento.nome_equipamento}}</td>
+                                         <td>{{ laboratorio_infraestrutura.marca.nome_marca }}</td>
+                                         <td>{{ laboratorio_infraestrutura.modelo }}</td>
+                                         <td>{{ laboratorio_infraestrutura.finalidade|default_if_none:'' }}</td>
+                                         <td>{{laboratorio_infraestrutura.tombo}}</td>
+                                         <td>{{laboratorio_infraestrutura.quantidade}}</td>
+         
+                                       </tr>
+                                     </tbody>
+                                     {% endfor %}
+         
+                                   </table>
+                       {% else %}
+                         <p>Nenhuma infraestrutura encontrada para este laboratório.</p>
+                       {% endif %}
+         
+                        <!-- Adicione aqui outras informações relevantes da infraestrutura -->
+                     </div>
+                  </div>
+   
                </div>
-
-         </div>
-
+         
          <div class="col-md-5">
             <div class="card mt-4">
 

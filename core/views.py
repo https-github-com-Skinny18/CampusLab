@@ -130,14 +130,18 @@ def editar_unidades_academicas(request, laboratorio_id):
 
 
 def visualizar_laboratorio(request, laboratorio_id):
+    
     laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+
     regimentos_internos = RegimentoInterno.objects.filter(laboratorio=laboratorio)
+
     unidades_academicas = UnidadeAcademica.objects.filter(laboratorio=laboratorio)
 
-    # Recupere todas as infraestruturas associadas a este laboratório
     infraestruturas = Infraestrutura.objects.filter(laboratorio_id=laboratorio.id)
 
-    return render(request, 'view.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas, 'regimentos_internos': regimentos_internos, 'unidades_academicas': unidades_academicas})
+    projetos = Projeto.objects.filter(laboratorio=laboratorio)
+
+    return render(request, 'view.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas, 'regimentos_internos': regimentos_internos, 'unidades_academicas': unidades_academicas, 'projetos': projetos})
 
 
 def index(request):
@@ -375,7 +379,6 @@ def adicionar_grupo_de_pesquisa(request, laboratorio_id=None):
 
 def editar_grupo_de_pesquisa(request, grupo_de_pesquisa_id):
     grupo_de_pesquisa = get_object_or_404(GrupoDePesquisa, id=grupo_de_pesquisa_id)
-    print( grupo_de_pesquisa)
 
     if request.method == 'POST':
         grupo_de_pesquisa_id = request.POST.get('grupo_de_pesquisa_id')  # Recupere o ID do grupo de pesquisa
@@ -423,7 +426,8 @@ def editar_infraestrutura(request, laboratorio_id):
         marca_id = request.POST.get('marca')
         modelo = request.POST.get('modelo')
         finalidade = request.POST.get('finalidade')
-
+        tombo = request.POST.get('tombo')
+        quantidade = request.POST.get('quantidade')
         # Verifique se uma imagem foi enviada
         novas_imagens = request.FILES.getlist('nova_imagem')
 
@@ -434,6 +438,8 @@ def editar_infraestrutura(request, laboratorio_id):
             laboratorio_id=laboratorio_id,
             modelo=modelo,
             finalidade=finalidade,
+            tombo=tombo,
+            quantidade=quantidade,
         )
 
         # Associe a nova infraestrutura ao laboratório atual
@@ -470,7 +476,7 @@ def salvar_equipamento(request):
             modelo = request.POST.get("modelo")
             finalidade = request.POST.get("finalidade")
           
-
+            
   # Salvar os dados no banco de dados
             Infraestrutura.objects.create(
                 equipamento=equipamento,
@@ -741,6 +747,8 @@ def export_to_excel(request):
     combined_df['modelo'] = combined_df['modelo'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
     combined_df['finalidade'] = combined_df['finalidade'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
     combined_df['status_y'] = combined_df['status_y'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+    combined_df['tombo'] = combined_df['tombo'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+    combined_df['quantidade'] = combined_df['quantidade'].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
 
     column_name_mapping = {
         'nome_laboratorio': 'LABORATÓRIO',
