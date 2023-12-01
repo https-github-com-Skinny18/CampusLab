@@ -136,7 +136,32 @@
       
                      <!-- Adicione aqui outras informações relevantes da infraestrutura -->
                   </div>
+            </div>
+
+            <div class="card">
+               <div class="card-header">
+                  <h3>Membros do Laboratório</h3>
                </div>
+
+               <div class="card-body">
+                  {% for membro in membros%}
+                  <ul class="list-group mb-4">
+                     
+                     <li class="list-group-item">
+                        <h5>Nome do Membro</h5>
+                        <p>{{membro.nome_membro}}</p>
+                        <h5>Função do Membro</h5>
+                        <p>{{membro.funcao}}</p>
+                        <h5>Curriculo Lattes</h5>
+                        <p>{{membro.curriculo_lattes}}</p>
+                     </li>
+                      
+                   </ul>
+               
+                     
+                  {% endfor %}
+               </div>
+            </div>
 
          </div>
 
@@ -239,7 +264,7 @@
                   </div>
          
                   <div class="card-body">
-                              {{ laboratorio.grupo_de_pesquisa }}</p>
+                              {{ laboratorio.grupos_de_pesquisa.nome_do_grupo }}</p>
           
 
                   </div>

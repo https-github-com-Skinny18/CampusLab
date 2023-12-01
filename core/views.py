@@ -141,7 +141,9 @@ def visualizar_laboratorio(request, laboratorio_id):
 
     projetos = Projeto.objects.filter(laboratorio=laboratorio)
 
-    return render(request, 'view.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas, 'regimentos_internos': regimentos_internos, 'unidades_academicas': unidades_academicas, 'projetos': projetos})
+    membros = MembroLaboratorio.objects.filter(laboratorio=laboratorio)
+
+    return render(request, 'view.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas, 'regimentos_internos': regimentos_internos, 'unidades_academicas': unidades_academicas, 'projetos': projetos, 'membros': membros})
 
 
 def index(request):
