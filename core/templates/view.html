@@ -138,7 +138,7 @@
                   </div>
             </div>
 
-            <div class="card">
+            <div class="card mt-4">
                <div class="card-header">
                   <h3>Membros do Laboratório</h3>
                </div>
@@ -264,9 +264,20 @@
                   </div>
          
                   <div class="card-body">
-                              {{ laboratorio.grupos_de_pesquisa.nome_do_grupo }}</p>
-          
-
+                     {% for grupo in grupos_de_pesquisa %}
+                     <ul class="list-group mb-4">
+                     
+                        <li class="list-group-item">
+                           <h5>Nome do Grupo</h5>
+                           <p>{{grupo.nome_do_grupo}}</p>
+                           <h5>Área</h5>
+                           <p>{{grupo.area}}</p>
+                           <h5>Link</h5>
+                           <p>{{grupo.link_grupo}}</p>
+                        </li>
+                         
+                      </ul>                
+                      {% endfor %}
                   </div>
                </div>
 

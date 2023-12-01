@@ -47,9 +47,12 @@ def view(request, laboratorio_id):
 
     unidades_academicas = UnidadeAcademica.objects.filter(laboratorio=laboratorio)
 
-    infraestruturas = Infraestrutura.objects.filter(laboratorio_id=laboratorio.id)
+    infraestruturas = Infraestrutura.objects.filter(laboratorio_id=laboratorio.id).filter(status=True)
 
     projetos = Projeto.objects.filter(laboratorio=laboratorio)
-    
-    return render(request, 'view_publico.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas, 'regimentos_internos': regimentos_internos, 'unidades_academicas': unidades_academicas, 'projetos': projetos})
 
+    membros = MembroLaboratorio.objects.filter(laboratorio=laboratorio)
+
+    grupos_de_pesquisa = laboratorio.grupos_de_pesquisa.all()
+
+    return render(request, 'view_publico.html', {'laboratorio': laboratorio, 'infraestruturas': infraestruturas, 'regimentos_internos': regimentos_internos, 'unidades_academicas': unidades_academicas, 'projetos': projetos, 'membros': membros, 'grupos_de_pesquisa': grupos_de_pesquisa})
