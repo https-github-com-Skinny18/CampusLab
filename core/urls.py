@@ -20,6 +20,8 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.conf.urls.static import static
 
+from .views import buscar_nomes
+from .views import excluir_responsavel_associado, editar_laboratorio
 
 
 # from .views import gerar_pd
@@ -30,6 +32,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('edit/', views.edit, name='edit'),
     path('equipamento/', views.equipamento, name='equipamento'),
+    path('adicionar_equipamento/', views.adicionar_equipamento, name='adicionar_equipamento'),
     path('main/', views.main, name='main'),
     path('salvar_laboratorio/', views.salvar_laboratorio, name='salvar_laboratorio'),
     path('salvar_equipamento/', views.salvar_equipamento, name='salvar_equipamento'),
@@ -63,6 +66,12 @@ urlpatterns = [
     path('obter_detalhes_projeto/', views.obter_detalhes_projeto, name='obter_detalhes_projeto'),
     path('obter_vigencia_projeto/', views.obter_vigencia_projeto, name='obter_vigencia_projeto'),
     path('obter_modalidade_projeto/', views.obter_modalidade_projeto, name='obter_modalidade_projeto'),
+    path('buscar_nomes/', buscar_nomes, name='buscar_nomes'),
+    path('editar_laboratorio/<int:laboratorio_id>/<int:responsavel_id>/excluir/', excluir_responsavel_associado, name='excluir_responsavel_associado'),
+    path('editar_laboratorio/<int:laboratorio_id>/<int:imagem_id>/', editar_laboratorio, name='editar_laboratorio'),
+    path('excluir_responsavel_associado/<int:laboratorio_id>/<int:responsavel_id>/',
+         views.excluir_responsavel_associado, name='excluir_responsavel_associado'),
+
 ]
 
 

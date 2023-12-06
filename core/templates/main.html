@@ -4,171 +4,170 @@
 {% include 'parciais/navbar.html'%}
 
 <div class="container mt-5">
-	
-	<div class="d-flex justify-content-between mb-4 ">
-		<h1>Laboratórios UEA</h1>
-		<button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal">
-			Exportar Laboratórios </button>
-	</div>
 
-	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="exampleModalLabel">Exportar Laboratórios</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<form method="POST" action="{% url 'export_to_excel' %}">
-						{% csrf_token %}
+    <div class="d-flex justify-content-between mb-4 ">
+        <h1>Laboratórios UEA</h1>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal_export">
+            Exportar Laboratórios
+        </button>
+    </div>
 
-						<div class="accordion" id="accordionExample">
+    <div class="modal fade" id="exampleModal_export" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Exportar Laboratórios</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% url 'export_to_excel' %}">
+                        {% csrf_token %}
 
-							<div class="accordion-item">
-								<h2 class="accordion-header" id="headingTwo">
-									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-										data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-										Unidades
-									</button>
-								</h2>
-								<div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
-									data-bs-parent="#accordionExample">
-									<div class="accordion-body">
-										{% for laboratorio in lab_u %}
-										<div class="form-check">
-											<input class="form-check-input" type="checkbox" name="unidade"
-												value="{{ laboratorio.unidade }}" id="unidade_{{ laboratorio.id }}">
-											<label class="form-check-label" for="unidade_{{ laboratorio.id }}">
-												{{laboratorio.unidade }}
-											</label>
-										</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-							<div class="accordion-item">
-								<h2 class="accordion-header" id="headingThree">
-									<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-											data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-										Laboratorios por Unidade
-									</button>
-								</h2>
-								<div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree"
-									 data-bs-parent="#accordionExample">
-									<div class="accordion-body wrapper">
-										{% regroup lab by unidade as laboratorios_por_unidade %}
-										{% for unidade, laboratorios in laboratorios_por_unidade %}
-											<a class="dropdown-toggle text-dark" data-bs-toggle="collapse"
-											   href="#collapseExample_{{ unidade|slugify }}" role="button"
-											   aria-expanded="false" aria-controls="collapseExample_{{ unidade|slugify }}"
-											   style="text-decoration:none">
-												{{ unidade }}
-											</a>
-											<br>
-											<div class="collapse" id="collapseExample_{{ unidade|slugify }}">
-												<div class="card-body">
-													{% for laboratorio in laboratorios %}
-														<div class="form-check">
-															<input class="form-check-input" type="checkbox" name="laboratorios"
-																   value="{{ laboratorio.id }}"
-																   id="laboratorio_{{ laboratorio.id }}">
-															<label class="form-check-label" for="laboratorio_{{ laboratorio.id }}">
-																{{ laboratorio.nome_laboratorio }}
-															</label>
-														</div>
-													{% endfor %}
-												</div>
-											</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-							
-						</div>
+                        <div class="accordion" id="accordionExample">
 
-				</div>
-				<div class="modal-footer d-flex justify-content-between">
-					<p class="p-2">
-						<input class="form-check-input" type="checkbox" name="export_all" id="export_all" value="1">
-						<label class="form-check-label" for="export_all">Todos Laboratórios</label>
-					</p>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingTwo">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                        Unidades
+                                    </button>
+                                </h2>
+                                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
+                                    data-bs-parent="#accordionExample">
+                                    <div class="accordion-body">
+                                        {% for laboratorio in laboratorios %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="unidade"
+                                                value="{{ laboratorio.unidade }}" id="unidade_{{ laboratorio.id }}">
+                                            <label class="form-check-label" for="unidade_{{ laboratorio.id }}">{{ laboratorio.unidade }}</label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingThree">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseThree" aria-expanded="false"
+                                        aria-controls="collapseThree">
+                                        Laboratórios por Unidade
+                                    </button>
+                                </h2>
+                                <div id="collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                                    <div class="accordion-body wrapper">
+                                        {% for laboratorio in laboratorios %}
+                                        <a class="dropdown-toggle text-dark" data-bs-toggle="collapse"
+                                            href="#collapseExample_{{laboratorio.id}}" role="button"
+                                            aria-expanded="false" aria-controls="collapseExample_{{laboratorio.id}}"
+                                            style="text-decoration:none">
+                                            {{laboratorio.unidade}}
+                                        </a>
+                                        <br>
+                                        <div class="collapse" id="collapseExample_{{laboratorio.id}}">
+                                            <div class="card-body">
+                                                {% for lab_item in laboratorios %}
+                                                {% if lab_item.unidade == laboratorio.unidade %}
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="laboratorios"
+                                                        value="{{ laboratorio.id }}"
+                                                        id="laboratorio_{{ laboratorio.id }}">
+                                                    <label class="form-check-label"
+                                                        for="laboratorio_{{ laboratorio.id }}">{{ laboratorio.nome_laboratorio }}</label>
+                                                </div>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-					<button type="submit" class="btn btn-secondary">Exportar</button>
-				</div>
-				</form>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <p class="p-2">
+                        <input class="form-check-input" type="checkbox" name="export_all" id="export_all" value="1">
+                        <label class="form-check-label" for="export_all">Todos Laboratórios</label>
+                    </p>
 
-			</div>
-		</div>
-	</div>
+                    <button type="submit" class="btn btn-secondary">Exportar</button>
+                </div>
+                </form>
 
-
-	{% for laboratorio in laboratorios %}
-	<div class="card mb-4 shadow">
-		<div class="card-body p-0 ">
-
-			<a href="{% url 'visualizar_laboratorio' laboratorio_id=laboratorio.id %}" class="text-dark card">
-				<div class="row">
-					<div class="col-4">
-						<img src="{{ laboratorio.imagens.last.imagem.url }}" class="img-fluid"
-							alt="Imagem do Laboratório" style="min-width: 150px;">
-					</div>
-					<div class="col-8">
-						<h3> {{laboratorio.nome_laboratorio }}</h4>
-							<p class="">{{ laboratorio.descricao}}</p>
-					</div>
-				</div>
-			</a>
-		</div>
-
-		<div class="card-footer">
-			<div class="media d-flex gap-1 mb-3">
-				<i class="fas fa-user"></i>
-				<div class="media-body ml-2">
-					<h6 class="my-0 text-dark d-block">{{ laboratorio.responsavel }}
-					</h6>
-				</div>
-			</div>
-
-			<div class="media  d-flex gap-1  ">
-				<i class="fas fa-map-marker-alt"></i>
-				<div class="media-body ml-2">
-					<small>{{ laboratorio.unidade|default_if_none:'' }}</small>
-				</div>
-			</div>
-		</div>
-	</div>
-	{% endfor %}
+            </div>
+        </div>
+    </div>
 
 
-	<nav aria-label="Page navigation example">
+    {% for laboratorio in laboratorios %}
+    <div class="card mb-4 shadow">
+        <div class="card-body p-0 ">
 
-		<ul class="pagination justify-content-end  mt-2">
-			{% if laboratorios.has_previous %}
-			<li class="page-item">
-				<a class="page-link" href="?page=1" tabindex="-1" aria-disabled="true">&laquo;
-					primeira</a>
-			</li>
-			<li class="page-item">
-				<a class="page-link" href="?page={{ laboratorios.previous_page_number }}">anterior</a>
-			</li>
-			{% endif %}
-			{% for page_num in laboratorios.paginator.page_range %}
-			<li class="page-item">
-				<a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
-			</li>
-			{% endfor %}
+            <a href="{% url 'visualizar_laboratorio' laboratorio_id=laboratorio.id %}" class="text-dark card">
+                <div class="row">
+                    <div class="col-4">
+                        <img src="{{ laboratorio.imagens.last.imagem.url }}" class="img-fluid"
+                            alt="Imagem do Laboratório" style="min-width: 150px;">
+                    </div>
+                    <div class="col-8">
+                        <h3> {{laboratorio.nome_laboratorio }}</h4>
+                            <p class="">{{ laboratorio.descricao}}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
 
-			{% if laboratorios.has_next %}
-			<li class="page-item">
-				<a class="page-link" href="?page={{ laboratorios.next_page_number }}">próxima</a>
-			</li>
-			<li class="page-item">
-				<a class="page-link" href="?page={{ laboratorios.paginator.num_pages }}" aria-disabled="true">última
-					&raquo;</a>
-			</li>
-			{% endif %}
-		</ul>
-	</nav>
+        <div class="card-footer">
+            <div class="media d-flex gap-1 mb-3">
+                <i class="fas fa-user"></i>
+                <div class="media-body ml-2">
+                    <h6 class="my-0 text-dark d-block">{{ laboratorio.responsavel }}
+                    </h6>
+                </div>
+            </div>
+
+            <div class="media  d-flex gap-1  ">
+                <i class="fas fa-map-marker-alt"></i>
+                <div class="media-body ml-2">
+                    <small>{{ laboratorio.unidade|default_if_none:'' }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+
+    <nav aria-label="Page navigation example">
+
+        <ul class="pagination justify-content-end  mt-2">
+            {% if laboratorios.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" tabindex="-1" aria-disabled="true">&laquo;
+                    primeira</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ laboratorios.previous_page_number }}">anterior</a>
+            </li>
+            {% endif %}
+            {% for page_num in laboratorios.paginator.page_range %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if laboratorios.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ laboratorios.next_page_number }}">próxima</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ laboratorios.paginator.num_pages }}" aria-disabled="true">última
+                    &raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
 
 </div>
 
@@ -177,7 +176,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
 
 <script>
-	filter = document.querySelector('#filter')
-	form = document.querySelector('#form')
-	filter.addEventListener("change", () => form.submit());
+    filter = document.querySelector('#filter')
+    form = document.querySelector('#form')
+    filter.addEventListener("change", () => form.submit());
 </script>

@@ -22,11 +22,12 @@
                         <input class="form-control" placeholder="Nome do laboratório" name="nome_laboratorio">
                         <textarea rows="3" class="form-control" placeholder="Descrição do laboratório" name="descricao"></textarea>
 
-                    
+                        <!-- Adicione campos ocultos para armazenar CPF e USER_LDAP -->
+                        <input type="hidden" id="cpf_responsavel" name="cpf_responsavel" value="">
+                        <input type="hidden" id="user_ldap_responsavel" name="user_ldap_responsavel" value="">
 
-                       
+                        <input class="form-control" placeholder="Responsável pelo laboratório" name="responsavel" id="responsavel">
 
-                        <input class="form-control" placeholder="Responsável pelo laboratório" name="responsavel">
                         <input class="form-control" placeholder="E-mail" name="email">
                         <input class="form-control" placeholder="Telefone" name="telefone">
 
@@ -49,5 +50,57 @@
     </form>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <!-- jQuery UI -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <script>
+        $(function() {
+            $("#responsavel").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "/buscar_nomes/",
+                        type: "GET",
+                        data: {
+                            term: request.term
+                        },
+                        dataType: "json",
+                        success: function(data) {
+                            console.log("DEBUG: Dados recebidos:", data);
+
+                            var mappedData = data.map(function(item) {
+                                return {
+                                    label: item.label,
+                                    value: item.value,
+                                    cpf: item.cpf,
+                                    user_ldap: item.user_ldap
+                                };
+                            });
+
+                            response(mappedData);
+                        }
+                    });
+                },
+                classes: {
+                    "ui-autocomplete": "bg-white list-group-item list-group-item-action",
+                },
+                minLength: 2,
+                messages: {
+                    noResults: '',
+                    results: function() {}
+                },
+                select: function(event, ui) {
+                    console.log("DEBUG: CPF selecionado:", ui.item.cpf);
+                    console.log("DEBUG: USER_LDAP correspondente:", ui.item.user_ldap);
+
+                    // Atualize os campos ocultos com CPF e USER_LDAP selecionados
+                    $("#cpf_responsavel").val(ui.item.cpf);
+                    $("#user_ldap_responsavel").val(ui.item.user_ldap);
+                }
+            });
+        });
+    </script>
 
 </body>

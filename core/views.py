@@ -30,7 +30,7 @@ import pandas as pd
 from openpyxl.styles import PatternFill
 from .models import Unidade, Laboratorio, Equipamento, RegimentoInterno, Unidade 
  # Adicione outros modelos conforme necessário
-
+from django.db.models import Q, Max
 
 
 from django.db import connections
@@ -188,37 +188,156 @@ def imagem_rgb(request, imagem_id):
 from django.db.models import Max
 
 def main(request):
-
     texto = request.GET.get('filter')
-    lab_u = Laboratorio.objects.values('unidade').distinct()
-    lab = Laboratorio.objects.all()
-    
-    if texto:
-        laboratorios = Laboratorio.objects.filter(
-            nome_laboratorio__icontains=texto 
+
+    # Verifica se o usuário tem PADACES 708
+    padaces_aceitos = []
+
+    if request.user.is_authenticated:
+        # Obtém o ID do usuário
+        user_id = request.session['user_id'].split(',')[0].split('=')[1]
+
+        # Adicione a informação do USER_LDAP do usuário atual
+        user_ldap_session = request.session['user_id'].split(',')[0].split('=')[1]
+        print("DEBUG: USER_LDAP do usuário atual--------:", user_ldap_session)
+        print("DEBUG: USER_LDAP do usuário atual--------:", user_ldap_session)
+        print("DEBUG: USER_LDAP do usuário atual--------:", user_ldap_session)
+
+
+        # Configurações de conexão com o banco de dados Oracle
+        db_settings = {
+            'USER': 'cons_oberon',
+            'PASSWORD': 'pwdconsoberon',
+            'HOST': '10.70.0.14',
+            'PORT': '1521',
+            'SERVICE_NAME': 'prouea2',
+        }
+
+        # Estabelece a conexão com o banco de dados Oracle
+        connection = cx_Oracle.connect(
+            f"{db_settings['USER']}/{db_settings['PASSWORD']}@{db_settings['HOST']}:{db_settings['PORT']}/{db_settings['SERVICE_NAME']}"
         )
+
+        cursor = connection.cursor()
+
+        try:
+            cursor.execute(f"SELECT * FROM OBERON.USUARIOPADACES WHERE USUARIO = '{user_id}' AND PADACES = 708")
+            padaces_aceitos = cursor.fetchone()
+
+        finally:
+            cursor.close()
+            connection.close()
+
+    # Recuperar laboratórios conforme sua lógica de pesquisa
+    laboratorios = Laboratorio.objects.all()
+
+    if not padaces_aceitos:
+        # Se o usuário não tem PADACES 708, filtre os laboratórios com base no USER_LDAP
+        user_ldap = request.session.get('user_ldap', '')
+
+        # Filtre os laboratórios com base no USER_LDAP do responsável e dos responsáveis associados
+        user_ldap_session = request.session['user_id'].split(',')[0].split('=')[1]
+        laboratorios_filtrados = laboratorios.filter(
+            Q(user_ldap_responsavel__iexact=user_ldap_session) |
+            Q(responsaveis_associados__user_ldap=user_ldap_session)
+        )
+
+
+
+        laboratorios = laboratorios_filtrados
+
+    # Adicione estas linhas para depuração
+    print('#########################################')
+    print("DEBUG: Usuário logado:", request.user.is_authenticated)
+    print("DEBUG: ID do usuário logado:", user_id)
+
+    # Verifica se o usuário tem PADACES 708
+    is_admin = padaces_aceitos is not None
+
+    for laboratorio in laboratorios:
+        # Obtém o USER_LDAP do responsável do laboratório, se existir
+        user_ldap_responsavel_laboratorio = ''
+        if is_admin and laboratorio.user_ldap_responsavel:
+            user_ldap_responsavel_laboratorio = laboratorio.user_ldap_responsavel
+
+            print('-------------------------------------------------------------------')
+            print(f"DEBUG: Responsável do laboratório***: {laboratorio.responsavel}")
+            print(f"DEBUG: USER_LDAP do responsável do laboratório**: {user_ldap_responsavel_laboratorio}")
+            print('-----------------------------------------------------------------------')
+            print('-----------------------------------------------------------------------')
+
+    if texto:
+        laboratorios = laboratorios.filter(nome_laboratorio__icontains=texto)
+
+    
+    is_admin = padaces_aceitos is not None
+
+    if request.method == "POST":
+        nome_laboratorio = request.POST.get('nome_laboratorio', '')
+        responsavel = request.POST.get('responsavel', '')
+        unidade = request.POST.get('unidade', '')
+        projeto = request.POST.get('projeto', '')
+
+        # Garanta que os valores não sejam None antes de incluí-los na consulta
+        conditions = Q()
+
+        if nome_laboratorio:
+            conditions |= Q(nome_laboratorio__icontains=nome_laboratorio)
+
+        if responsavel:
+            conditions |= Q(responsavel__icontains=responsavel)
+
+        if unidade:
+            conditions |= Q(unidade__icontains=unidade)
+
+        laboratorios = laboratorios.filter(conditions)
+
+        # if projeto:
+        #     projetos = Projeto.objects.filter(laboratorio_in=laboratorios, nome_projeto_icontains=projeto)
+
     else:
-
-        laboratorios = Laboratorio.objects.annotate(max_imagem=Max('imagens__data_upload')).all()
-    print(laboratorios)
-
-    paginator = Paginator(laboratorios, 6)  
+        if texto:
+            laboratorios = laboratorios.filter(
+                Q(nome_laboratorio__icontains=texto) | 
+                Q(responsavel__icontains=texto) | 
+                Q(bairro__icontains=texto) | 
+                Q(grupos_de_pesquisa_nome_do_grupo_icontains=texto) |
+                Q(unidade__icontains=texto)
+            )
+        else:
+            laboratorios = Laboratorio.objects.all()
+    paginator = Paginator(laboratorios, 6)
     page = request.GET.get('page')
     laboratorios = paginator.get_page(page)
 
-
+    # Adicione user_ldap_responsavel_laboratorio ao contexto
     context = {
-        'lab_u': lab_u,
-        'lab': lab,
         'laboratorios': laboratorios,
+        'is_admin': is_admin,
+        'user_ldap_responsavel': user_ldap_session,
+        'user_ldap_responsavel_laboratorio': user_ldap_responsavel_laboratorio,
     }
 
-
     return render(request, 'main.html', context)
-
 def salvar_laboratorio(request):
-    if request.method == "POST":
-        try:
+    try:
+        connection = cx_Oracle.connect(
+            user='cons_oberon',
+            password='pwdconsoberon',
+            dsn='10.70.0.14:1521/prouea2',
+            encoding='UTF-8',
+            nencoding='UTF-8'
+        )
+
+        cursor = connection.cursor()
+        user_id = request.session['user_id'].split(',')[0].split('=')[1]
+
+        cursor.execute(f"SELECT * FROM OBERON.USUARIOPADACES WHERE USUARIO = '{user_id}' AND PADACES = 708")
+        padaces_aceitos = cursor.fetchone()
+
+        is_admin = padaces_aceitos is not None
+
+        if request.method == "POST":
             imagens_lab = request.FILES.getlist("imagens_lab[]")
             imagens_salvas = []
 
@@ -226,21 +345,19 @@ def salvar_laboratorio(request):
                 imagem_laboratorio = ImagemLaboratorio(imagem=imagem)
                 imagem_laboratorio.save()
                 imagens_salvas.append(imagem_laboratorio)
-            
+
             if not imagens_lab:
-                    # Caminho para a imagem padrão (ajuste o caminho conforme necessário)
                 caminho_imagem_padrao = 'templates/static/images/generica.png'
-                    
+
                 with open(caminho_imagem_padrao, 'rb') as img_padrao:
-                        # Crie uma instância de ImagemLaboratorio com a imagem padrão
-                     imagem_laboratorio = ImagemLaboratorio(imagem=File(img_padrao))
-                     imagem_laboratorio.save()
-                        
-                        # Adicione a imagem padrão à lista de imagens
-                     imagens_salvas.append(imagem_laboratorio)
+                    imagem_laboratorio = ImagemLaboratorio(imagem=File(img_padrao))
+                    imagem_laboratorio.save()
+                    imagens_salvas.append(imagem_laboratorio)
 
             nome_laboratorio = request.POST.get("nome_laboratorio")
             responsavel = request.POST.get("responsavel")
+            cpf_responsavel = request.POST.get('cpf_responsavel')
+            user_ldap_responsavel = request.POST.get('user_ldap_responsavel')
             email = request.POST.get("email")
             telefone = request.POST.get("telefone")
             unidade = request.POST.get("unidade")
@@ -248,14 +365,9 @@ def salvar_laboratorio(request):
             numero_rua = request.POST.get("numero_rua")
             cep = request.POST.get("cep")
             bairro = request.POST.get("bairro")
-           
+
             ato_anexo = request.FILES.get("ato_anexo")
             ato_anexo_content = ato_anexo.read() if ato_anexo else None
-            apresentacao = request.POST.get("apresentacao")
-            objetivos = request.POST.get("objetivos")
-
-            apresentacao = apresentacao if apresentacao else None
-            objetivos = objetivos if objetivos else None
             
             descricao = request.POST.get("descricao")
             link_pnipe = request.POST.get("link_pnipe")
@@ -266,22 +378,29 @@ def salvar_laboratorio(request):
             andar = andar if andar else None
             sala = sala if sala else None
 
-
             unidade = unidade if unidade else None
-            bairro =  bairro if bairro else None
+            bairro = bairro if bairro else None
             rua = rua if rua else None
             numero_rua = numero_rua if numero_rua else None
             cep = cep if cep else None
-            apresentacao = apresentacao if apresentacao else None
-            objetivos = objetivos if objetivos else None
+            
             descricao = descricao if descricao else None
             link_pnipe = link_pnipe if link_pnipe else None
 
-
-            equipamento_id = request.POST.get('equipamento')  # Troquei 'equipamento_id' por 'equipamento'
-            marca_id = request.POST.get('marca')  # Troquei 'marca_id' por 'marca'
+            equipamento_id = request.POST.get('equipamento')
+            marca_id = request.POST.get('marca')
             modelo = request.POST.get('modelo')
             finalidade = request.POST.get('finalidade')
+
+            with connection.cursor() as cursor:
+                print(f"CPF do responsável (antes de consultar): {cpf_responsavel}")
+                cursor.execute(f"SELECT USER_LDAP FROM OBERON.USUARIO WHERE CPF = '{cpf_responsavel}'")
+                user_ldap_responsavel = cursor.fetchone()
+                print(f"USER_LDAP do responsável (após a consulta): {user_ldap_responsavel}")
+
+                user_ldap_responsavel = user_ldap_responsavel[0] if user_ldap_responsavel else None
+                print(f"USER_LDAP do responsável (depois de salvar): {user_ldap_responsavel}")
+                print(f"USER_LDAP do responsável (depois de salvar): {user_ldap_responsavel}")
 
             Email(email, nome_laboratorio, responsavel)
 
@@ -299,7 +418,6 @@ def salvar_laboratorio(request):
             modelo = modelo if modelo else None
             finalidade = finalidade if finalidade else None
 
-            # Salvar os dados no banco de dados
             laboratorio = Laboratorio.objects.create(
                 nome_laboratorio=nome_laboratorio,
                 responsavel=responsavel,
@@ -312,46 +430,104 @@ def salvar_laboratorio(request):
                 cep=cep,
                 bairro=bairro,
                 
-                apresentacao=apresentacao,
-                objetivos=objetivos,
                 descricao=descricao,
                 link_pnipe=link_pnipe,
+                cpf_responsavel=cpf_responsavel,
+                user_ldap_responsavel=user_ldap_responsavel,
             )
+
             pdf_unidade_academica = request.FILES.get("pdf_unidade_academica")
             if pdf_unidade_academica:
-                # Certifique-se de que o arquivo seja um PDF (você pode adicionar validações adicionais)
                 if not pdf_unidade_academica.name.endswith('.pdf'):
                     raise ValidationError("O arquivo deve ser um PDF.")
-                
-                # Crie uma instância de UnidadeAcademica e associe-a ao laboratório
+
                 unidade_academica = UnidadeAcademica(laboratorio=laboratorio, pdf=pdf_unidade_academica)
                 unidade_academica.save()
-         # Salvar as imagens no banco de dados (caso você tenha um modelo separado para imagens)
-          
+
+            infraestrutura = Infraestrutura.objects.create(
+                equipamento=equipamento,
+                marca=marca,
+                modelo=modelo,
+                finalidade=finalidade,
+            )
+
+            laboratorio.infraestrutura = infraestrutura
+
+            print(f"CPF do responsável (antes de salvar): {cpf_responsavel}")
+            print(f"USER_LDAP do responsável (antes de salvar): {user_ldap_responsavel}")
+
             laboratorio.save()
 
-            
-            # Relacionar as imagens ao laboratório
+            print(f"Laboratório salvo. ID: {laboratorio.id}")
+            print(f"CPF do responsável (depois de salvar): {laboratorio.cpf_responsavel}")
+            print(f"USER_LDAP do responsável (depois de salvar): {laboratorio.user_ldap_responsavel}")
+
             laboratorio.imagens.set(imagens_salvas)
-            u = Unidade.objects.all()
 
             if imagens_salvas:
                 return HttpResponseRedirect(reverse('editar_laboratorio', args=[laboratorio.id, imagens_salvas[0].id]))
             else:
-                # Lida com o caso em que não há imagens salvas
-                caminho_imagem_padrao = static('images/download.jpeg')  # Ajuste o caminho aqui
+                caminho_imagem_padrao = static('images/download.jpeg')
                 messages.add_message(request, messages.WARNING, 'Nenhuma imagem foi salva.')
 
-                return HttpResponseRedirect(reverse('editar_laboratorio', args=[laboratorio.id, 0]))  # Defina 0 como o ID da imagem padrão
+                return HttpResponseRedirect(
+                    reverse('editar_laboratorio', args=[laboratorio.id, 0]))
 
-        except Exception as e:
-            print('Erro:', str(e))
-            print('Erro ao salvar')
-            messages.add_message(request, messages.WARNING, 'O sistema apresenta falhas internas.')
-            return redirect('../edit/')
-    else:
-        return render(request, 'edit.html')
+    except Exception as e:
+        print('Erro:', str(e))
+        print('Erro ao salvar')
+        messages.add_message(request, messages.WARNING, 'O sistema apresenta falhas internas.')
+
+    finally:
+        if connection:
+            connection.close()
+
+    return redirect('../edit/')
     
+
+def buscar_nomes(request):
+    term = request.GET.get('term', '')
+
+    # Configurações de conexão com o banco de dados Oracle
+    db_settings = {
+        'USER': 'cons_oberon',
+        'PASSWORD': 'pwdconsoberon',
+        'HOST': '10.70.0.14',
+        'PORT': '1521',
+        'SERVICE_NAME': 'prouea2',
+    }
+
+    # Estabelece a conexão com o banco de dados Oracle
+    connection = cx_Oracle.connect(
+        f"{db_settings['USER']}/{db_settings['PASSWORD']}@{db_settings['HOST']}:{db_settings['PORT']}/{db_settings['SERVICE_NAME']}"
+    )
+
+    with connection.cursor() as cursor:
+        # Consulta SQL para buscar nomes que começam com o termo
+        query = f"SELECT NOME_COMPL, CPF FROM OBERON.PESSOA WHERE NOME_COMPL LIKE '{term}%'"
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+        nomes_com_cpfs = [{'label': row[0], 'value': row[0], 'cpf': row[1]} for row in results]
+
+        # Adiciona USER_LDAP ao resultado
+        for pessoa in nomes_com_cpfs:
+            cpf = pessoa['cpf']
+            # Consulta SQL para buscar USER_LDAP na tabela USUARIO com base no CPF
+            cursor.execute(f"SELECT USER_LDAP FROM OBERON.USUARIO WHERE CPF = '{cpf}'")
+            user_ldap = cursor.fetchone()
+            pessoa['user_ldap'] = user_ldap[0] if user_ldap else None
+
+    connection.close()
+
+    # print("DEBUG: Resultado da busca de nomes:", nomes_com_cpfs)
+
+    return JsonResponse(nomes_com_cpfs, safe=False)
+
+
+
+
+
 def adicionar_grupo_de_pesquisa(request, laboratorio_id=None):
     laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id) if laboratorio_id else request.user.laboratorio
 
@@ -415,16 +591,50 @@ def excluir_grupo_de_pesquisa(request, grupo_de_pesquisa_id):
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
     
+def adicionar_equipamento(request):
+   
+    if request.method == 'POST':
+        nome_equipamento = request.POST.get('nome_equipamento')
+        nome_marca = request.POST.get('nome_marca')
+
+        if nome_marca:
+
+            marca_existente = Marca.objects.filter(
+                nome_marca=nome_marca
+            ).exists()
+
+            if not marca_existente:
+                marca = Marca.objects.create(
+                    nome_marca=nome_marca
+                )
+                return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+            else:
+                return HttpResponse('Marca já existe.')
+
+        if nome_equipamento:
+
+            equipamento_existente = Equipamento.objects.filter(
+                nome_equipamento=nome_equipamento,
+            ).exists()
+
+            if not equipamento_existente:
+                equipamento = Equipamento.objects.create(
+                    nome_equipamento=nome_equipamento,
+                )
+                return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+            else:
+                # Adiciona a mensagem de erro ao sistema de mensagens
+                messages.error(request, 'Equipamento já existe.')
+   
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
 def editar_infraestrutura(request, laboratorio_id):
     laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
-    marcas = Marca.objects.all()
+   
+    marcas = Marca.objects.all() 
     equipamentos = Equipamento.objects.all()
 
-
-    
-
-    # infraestruturas = laboratorio.infraestruturas.all()
-
+ 
     if request.method == 'POST':
         equipamento_id = request.POST.get('equipamento')
         marca_id = request.POST.get('marca')
@@ -559,8 +769,56 @@ def view_imagem(request, imagem_id):
     except ObjectDoesNotExist:
         return HttpResponse("Imagem não encontrada.", status=404)
 
+from .models import ResponsavelAssociado
+
 def editar_laboratorio(request, laboratorio_id, imagem_id):
+
+    print("DEBUG: USER_LDAP do responsável do laboratório na editar_laboratorio:", request.session.get('user_ldap', ''))
+    print("DEBUG: USER_LDAP do responsável do laboratório na editar_laboratorio:", request.session.get('user_id', ''))
+
     laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+
+    # Verifica se o usuário tem PADACES 708
+    padaces_aceitos = []
+
+    if request.user.is_authenticated:
+
+        # Obtém o ID do usuário
+        user_id = request.session['user_id'].split(',')[0].split('=')[1]
+
+        # Configurações de conexão com o banco de dados Oracle
+        db_settings = {
+            'USER': 'cons_oberon',
+            'PASSWORD': 'pwdconsoberon',
+            'HOST': '10.70.0.14',
+            'PORT': '1521',
+            'SERVICE_NAME': 'prouea2',
+        }
+
+        # Estabelece a conexão com o banco de dados Oracle
+        connection = cx_Oracle.connect(
+            f"{db_settings['USER']}/{db_settings['PASSWORD']}@{db_settings['HOST']}:{db_settings['PORT']}/{db_settings['SERVICE_NAME']}"
+        )
+
+        cursor = connection.cursor()
+
+        try:
+            # Use o ID do usuário na consulta SQL
+            cursor.execute(f"SELECT * FROM OBERON.USUARIOPADACES WHERE USUARIO = '{user_id}' AND PADACES = 708")
+            padaces_aceitos = cursor.fetchone()
+
+        finally:
+            cursor.close()
+            connection.close()
+
+    # Lógica para verificar se o usuário é admin
+    is_admin = padaces_aceitos is not None
+
+
+    # Mensagens de depuração
+    print("DEBUG: Usuário logado:", request.user.is_authenticated)
+    print("DEBUG: ID do usuário logado:", user_id)
+    print("DEBUG: É admin:", is_admin)
 
     if request.method == 'POST':
         # Processar os campos do formulário
@@ -568,12 +826,37 @@ def editar_laboratorio(request, laboratorio_id, imagem_id):
         laboratorio.responsavel = request.POST.get('responsavel', '')
         laboratorio.email = request.POST.get('email', '')
         laboratorio.data_criacao = request.POST.get('data_criacao', '')
-        laboratorio.apresentacao = request.POST.get('apresentacao', '')
-        laboratorio.objetivos = request.POST.get('objetivos', '')
         laboratorio.descricao = request.POST.get('descricao', '')
         laboratorio.link_pnipe = request.POST.get('link_pnipe', '')
+        laboratorio.user_ldap_responsavel = request.POST.get('user_ldap_responsavel', '')
 
-        # Outros campos...
+        # Processar os novos responsáveis associados
+        novos_responsaveis_associados = request.POST.getlist('novo_responsavel_1', '')
+
+        # Adicione estas variáveis para armazenar os dados do novo responsável associado
+        novo_responsavel_cpf = None
+        novo_responsavel_user_ldap = None
+
+        for nome_responsavel in novos_responsaveis_associados:
+            cpf_responsavel = request.POST.get(f'cpf_responsavel_1', '')
+            user_ldap_responsavel = request.POST.get(f'user_ldap_responsavel_1', '')
+
+            responsavel_associado = ResponsavelAssociado.objects.create(
+                nome=nome_responsavel,
+                cpf=cpf_responsavel,
+                user_ldap=user_ldap_responsavel,
+                laboratorio=laboratorio
+            )
+            laboratorio.responsaveis_associados.add(responsavel_associado)
+
+            # Atualize as variáveis com os dados do último responsável associado
+            novo_responsavel_cpf = responsavel_associado.cpf
+            novo_responsavel_user_ldap = responsavel_associado.user_ldap
+
+            # Adicione estes prints para depuração, agora dentro do loop
+            print(f"Novo responsável associado salvo. ID: {responsavel_associado.id}")
+            print(f"CPF do novo responsável associado: {novo_responsavel_cpf}")
+            print(f"USER_LDAP do novo responsável associado: {novo_responsavel_user_ldap}")
 
         # Processar a imagem, se presente
         imagem_laboratorio = request.FILES.get('imagem_laboratorio')
@@ -584,11 +867,41 @@ def editar_laboratorio(request, laboratorio_id, imagem_id):
             laboratorio.imagens.add(imagem)
 
         laboratorio.save()
+
         messages.success(request, 'Laboratório atualizado com sucesso.')
         return redirect('editar_laboratorio', laboratorio_id=laboratorio.id, imagem_id=imagem_id)
 
-    # Inclua o objeto laboratorio no contexto
-    return render(request, 'editar_laboratorio.html', {'laboratorio': laboratorio})
+        # Restante do código para renderizar a página de edição
+    return render(request, 'editar_laboratorio.html', {'laboratorio': laboratorio, 'is_admin': is_admin})
+
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
+from .models import Laboratorio, ResponsavelAssociado
+from django.urls import reverse
+
+def excluir_responsavel_associado(request, laboratorio_id, responsavel_id):
+    laboratorio = get_object_or_404(Laboratorio, id=laboratorio_id)
+    responsavel_associado = get_object_or_404(ResponsavelAssociado, id=responsavel_id)
+
+    # Certifique-se de que o responsável associado está vinculado ao laboratório antes de excluir
+    if responsavel_associado in laboratorio.responsaveis_associados.all():
+        responsavel_associado.delete()
+        messages.success(request, 'Responsável associado excluído com sucesso.')
+    else:
+        messages.error(request, 'Erro ao excluir responsável associado.')
+        print(f"DEBUG: Responsável associado não encontrado no laboratório {laboratorio.id}")
+
+    # Redirecione de volta para a mesma página
+    return redirect('editar_laboratorio', laboratorio_id=laboratorio.id, imagem_id=0)
+
+
+
+
+
+
+
+
+
 
 def editar_endereco(request, laboratorio_id):
     laboratorio = get_object_or_404(Laboratorio, pk=laboratorio_id)
@@ -766,8 +1079,7 @@ def export_to_excel(request):
         'bairro': 'BAIRRO',
         'andar': 'ANDAR',
         'sala': 'SALA',
-        'apresentacao': 'APRESENTAÇÃO',
-        'objetivos': 'OBJETIVOS',
+        
         'descricao': 'DESCRICAO',
         'link_pnipe': 'LINK',
         'ato_anexo': 'ANEXO',

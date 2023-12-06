@@ -6,8 +6,8 @@
 
 body {
   --corBackground: #ffffff;
-  --corPrimaria: #001f62;
-  --corSegundaria: #001f62;
+  --corPrimaria: #2a5a48;
+  --corSegundaria: #2a5a48;
   background-color: var(--corBackground);
   width: 100vw;
   height: 100vh;

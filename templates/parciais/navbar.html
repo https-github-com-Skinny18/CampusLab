@@ -5,35 +5,138 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-rs">
     <div class="container-fluid">
       <a class="navbar-brand" href="/main">
-        <img id="logo" src="{% static 'images/logobrancouea.png' %}" alt="##" class="img-fluid logo-size">
+        <img id="logo" src="https://propesp.uea.edu.br/wp-content/uploads/sites/6/2023/02/propesp01.svg" alt="##" class="img-fluid logo-size">
       </a>
-      <button class="navbar-toggler" type="button" data-mdb-toggle="collapse"
-        data-mdb-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-        aria-label="Toggle navigation">
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-mdb-toggle="collapse"
+        data-mdb-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
         <i class="fas fa-bars"></i>
       </button>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <form class="me-3">
-          <div class="form-white input-group" style="width: 250px;">
-            <input type="search" class="form-control rounded" placeholder="Pesquisar " aria-label="Search" aria-describedby="search-addon" name="filter" />
-            <button type="submit" class="btn btn-secondary">Pesquisar</button>
+          <div class="form-white input-group" style="width: 250px">
+            <input
+              type="search"
+              class="form-control rounded"
+              placeholder="Pesquisar "
+              aria-label="Search"
+              aria-describedby="search-addon"
+              name="filter"
+            />
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#exampleModal"
+            >
+              Filtro avançado
+            </button>
           </div>
         </form>
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link" href="/edit/">Criar Laboratorio</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/main">Visualizar Laboratorio</a>
-          </li>
-        </ul>
+
+        <div
+          class="modal fade"
+          id="exampleModal"
+          tabindex="-1"
+          aria-labelledby="exampleModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog">
+            <form method="POST" action="{% url 'main' %}">
+              {% csrf_token %}
+
+            <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">
+                  Filtro Avançado
+                </h1>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+
+              <div class="modal-body">
+                <div class="row">
+                  <div class="col-md-8">
+                    <input
+                      class="form-control"
+                      type="text"
+                      name="nome_laboratorio "
+                      placeholder="Nome do Laboratório"
+                    />
+
+
+                  </div>
+                  <div class="col-md-4">
+                    <select
+                      style="width: fit-content !important"
+                      class="form-select"
+                      name="unidade"
+                    >
+                      <option value="">Unidade</option>
+                      {% for unidade in laboratorios %}
+                      <option value="{{ unidade.unidade }}">
+                        {{ unidade.unidade }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div>
+                    <input class="form-control mt-2" type="text" name="responsavel" placeholder="Responsável" >
+                    
+                  </div>
+
+                </div>
+              </div>
+
+
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">
+                  Pesquisar
+                </button>
+              </div>
+            </form>
+
+            </div>
+          </div>
+        </div>
+
+        {% if is_admin %}
+              <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                  <a class="nav-link" href="/edit/">Criar Laboratorio</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="/main">Visualizar Laboratorio</a>
+                </li>
+              </ul>
+        {% endif %}
         <ul class="navbar-nav d-flex flex-row ms-auto me-3">
           <li class="nav-item me-3 me-lg-0 dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-bs-toggle="dropdown"
-              aria-expanded="false">
-              <i class="fa fa-door-open fa-2x " aria-hidden="true"></i> <!-- Ícone de porta -->
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              id="navbarDropdown1"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i class="fa fa-door-open fa-2x" aria-hidden="true"></i>
+              <!-- Ícone de porta -->
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown1">
+            <ul
+              class="dropdown-menu dropdown-menu-end"
+              aria-labelledby="navbarDropdown1"
+            >
               <li>
                 <a class="dropdown-item" href="{% url 'deslogar' %}">Sair</a>
               </li>
@@ -47,12 +150,12 @@
 </header>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const button = document.querySelector('.navbar-toggler');
-    const navbar = document.querySelector('#navbarSupportedContent');
-  
-    button.addEventListener('click', function() {
-      navbar.classList.toggle('show'); // Adicione ou remova a classe 'show' para expandir ou recolher a barra de navegação
+  document.addEventListener("DOMContentLoaded", function () {
+    const button = document.querySelector(".navbar-toggler");
+    const navbar = document.querySelector("#navbarSupportedContent");
+
+    button.addEventListener("click", function () {
+      navbar.classList.toggle("show"); // Adicione ou remova a classe 'show' para expandir ou recolher a barra de navegação
     });
   });
 </script>

@@ -48,7 +48,9 @@ class GrupoDePesquisa(models.Model):
 class Laboratorio(models.Model):
 
     nome_laboratorio = models.CharField(max_length=80, null=False, verbose_name="nome do laboratorio")
-    responsavel = models.CharField(null=False,max_length=40,default="jose carlos", verbose_name='Usuário de cadastro')
+    responsavel = models.CharField(null=False,max_length=255,default="jose carlos", verbose_name='Usuário de cadastro')
+    cpf_responsavel = models.CharField(max_length=11, null=True, blank=True)
+    user_ldap_responsavel = models.CharField(max_length=255, null=True, blank=True)
     email = models.EmailField(verbose_name='email', null=False,default="meu_email@example.com")
     telefone = models.CharField(max_length=15,default="9299999",null=False,verbose_name='numero de telefone')
     unidade = models.CharField(null=True,max_length=10, verbose_name='unidade academica' , default="meu_email")
@@ -58,8 +60,8 @@ class Laboratorio(models.Model):
     bairro= models.CharField(null=True, max_length=50,default="jose carlos", verbose_name='nome do bairro do laboratorio')
     andar = models.PositiveIntegerField(null=True, verbose_name='andar do laboratorio')
     sala = models.CharField(null=True, max_length=10, verbose_name='sala do laboratorio')
-    apresentacao= models.TextField(null=True,max_length=400,default="jose carlos", verbose_name='Apresentação geral do laboratório:')
-    objetivos = models.TextField(null=True,max_length=400, default="jose carlos",verbose_name='Objetivos do laboratório:')
+    # apresentacao= models.TextField(null=True,max_length=400,default="jose carlos", verbose_name='Apresentação geral do laboratório:')
+    # objetivos = models.TextField(null=True,max_length=400, default="jose carlos",verbose_name='Objetivos do laboratório:')
     descricao = models.TextField(null=True, max_length=400, default="ou", verbose_name='descricao das atividades de pesquisa e ensino:')
 
     link_pnipe = models.CharField(null=True,default="ou",max_length=50, verbose_name='link do pnipe')
@@ -67,6 +69,17 @@ class Laboratorio(models.Model):
     unidades_academicas = models.ManyToManyField(UnidadeAcademica, related_name='laboratorios', blank=True)
     imagens = models.ManyToManyField(ImagemLaboratorio, related_name='laboratorios_lab', blank=True)
     grupos_de_pesquisa = models.ManyToManyField(GrupoDePesquisa, related_name='laboratorios', blank=True)
+
+
+class ResponsavelAssociado(models.Model):
+    nome = models.CharField(max_length=255, verbose_name="Nome do Responsável Associado")
+    cpf = models.CharField(max_length=11, blank=True, null=True, verbose_name="CPF do Responsável Associado")
+    user_ldap = models.CharField(max_length=255, blank=True, null=True, verbose_name="USER_LDAP do Responsável Associado")
+    laboratorio = models.ForeignKey(Laboratorio, on_delete=models.CASCADE, related_name='responsaveis_associados')
+
+    def __str__(self):
+        return self.nome
+
 
 
 class MembroLaboratorio(models.Model):
